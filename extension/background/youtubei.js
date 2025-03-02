@@ -1,71 +1,72 @@
-const MAX_COMMENT_PAGES = 5
-const MAX_COMMENTS = 100
-
 const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 const INNERTUBE_CLIENT_NAME = "WEB"
 const INNERTUBE_CLIENT_VERSION = "2.20211129.09.00"
 
 export async function fetchComments(videoId) {
-    const videoResponse = await fetchVideo(videoId)
-    let token = commentsContinuationToken(videoResponse)
-    if (!token) {
-        return []
-    }
-    const comments = []
-    let prevToken
-    let pageCount = 0
-    while (prevToken !== token && pageCount < MAX_COMMENT_PAGES && comments.length < MAX_COMMENTS) {
-        const commentsResponse = await fetchNext(token)
-        prevToken = token
-        const items = pageCount === 0
-            ? commentsResponse.onResponseReceivedEndpoints[1].reloadContinuationItemsCommand.continuationItems
-            : commentsResponse.onResponseReceivedEndpoints[0].appendContinuationItemsAction.continuationItems
-        if (!items) {
-            break
+    if ((await browser.storage.sync.get(['enabled'])).enabled) {
+        const videoResponse = await fetchVideo(videoId)
+        let token = commentsContinuationToken(videoResponse)
+        if (!token) {
+            return []
         }
-
-        for (const item of items) {
-            if (item.commentThreadRenderer) {
-                const commentThreadRenderer = item.commentThreadRenderer
-                if (commentThreadRenderer.comment) {
-                    const cr = commentThreadRenderer.comment.commentRenderer
-                    const commentId = cr.commentId
-                    const authorName = cr.authorText.simpleText
-                    const authorAvatar = cr.authorThumbnail.thumbnails[0].url
-                    const text = cr.contentText.runs
-                        .map(run => run.text)
-                        .join("")
-                    comments.push({
-                        commentId,
-                        authorName,
-                        authorAvatar,
-                        text
-                    })
-                } else if (commentThreadRenderer.commentViewModel) {
-                    const commentViewModel = commentThreadRenderer.commentViewModel.commentViewModel
-                    const commentKey = commentViewModel.commentKey
-                    //TODO collect in a map once instead of searching every time
-                    const mutation = commentsResponse.frameworkUpdates.entityBatchUpdate.mutations
-                        .find(e => e.entityKey === commentKey)
-                    const commentEntityPayload = mutation.payload.commentEntityPayload
-                    const commentId = commentEntityPayload.properties.commentId
-                    const authorName = commentEntityPayload.author.displayName
-                    const authorAvatar = commentEntityPayload.author.avatarThumbnailUrl
-                    const text = commentEntityPayload.properties.content.content
-                    comments.push({
-                        commentId,
-                        authorName,
-                        authorAvatar,
-                        text
-                    })
-                }
-            } else if (item.continuationItemRenderer) {
-                token = item.continuationItemRenderer.continuationEndpoint.continuationCommand.token
+        const maxResults = (await browser.storage.sync.get('maxResults')).maxResults
+        const comments = []
+        let prevToken
+        let pageCount = 0
+        while (prevToken !== token && pageCount < maxResults && comments.length < maxResults) {
+            const commentsResponse = await fetchNext(token)
+            prevToken = token
+            const items = pageCount === 0
+                ? commentsResponse.onResponseReceivedEndpoints[1].reloadContinuationItemsCommand.continuationItems
+                : commentsResponse.onResponseReceivedEndpoints[0].appendContinuationItemsAction.continuationItems
+            if (!items) {
+                break
             }
+
+            for (const item of items) {
+                if (item.commentThreadRenderer) {
+                    const commentThreadRenderer = item.commentThreadRenderer
+                    if (commentThreadRenderer.comment) {
+                        const cr = commentThreadRenderer.comment.commentRenderer
+                        const commentId = cr.commentId
+                        const authorName = cr.authorText.simpleText
+                        const authorAvatar = cr.authorThumbnail.thumbnails[0].url
+                        const text = cr.contentText.runs
+                            .map(run => run.text)
+                            .join("")
+                        comments.push({
+                            commentId,
+                            authorName,
+                            authorAvatar,
+                            text
+                        })
+                    } else if (commentThreadRenderer.commentViewModel) {
+                        const commentViewModel = commentThreadRenderer.commentViewModel.commentViewModel
+                        const commentKey = commentViewModel.commentKey
+                        //TODO collect in a map once instead of searching every time
+                        const mutation = commentsResponse.frameworkUpdates.entityBatchUpdate.mutations
+                            .find(e => e.entityKey === commentKey)
+                        const commentEntityPayload = mutation.payload.commentEntityPayload
+                        const commentId = commentEntityPayload.properties.commentId
+                        const authorName = commentEntityPayload.author.displayName
+                        const authorAvatar = commentEntityPayload.author.avatarThumbnailUrl
+                        const text = commentEntityPayload.properties.content.content
+                        comments.push({
+                            commentId,
+                            authorName,
+                            authorAvatar,
+                            text
+                        })
+                    }
+                } else if (item.continuationItemRenderer) {
+                    token = item.continuationItemRenderer.continuationEndpoint.continuationCommand.token
+                }
+            }
+            pageCount++
         }
-        pageCount++
+        return comments
     }
-    return comments
+    return []
 }
 
 function commentsContinuationToken(videoResponse) {

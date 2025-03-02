@@ -2,14 +2,16 @@
     pointer-events: none;
 }
 
-
+.ytp-timed-markers-container {
+    z-index: 200;
+}
 
 .__youtube-timestamps__bar {
     width: 100%;
     height: 100%;
     position: absolute;
     transform: scaleX(1);
-    z-index: 35;
+    z-index: 500;
 }
 
 .__youtube-timestamps__stamp {
@@ -19,6 +21,7 @@
     width: 0.5%;
     position: fixed;
     background-color: white;
+    z-index: 501;
 }
 
 .__youtube-timestamps__preview-wrapper {
