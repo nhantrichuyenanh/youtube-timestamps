@@ -1,22 +1,17 @@
 document.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const enabled = document.getElementById('enabled').checked;
     const maxResults = parseInt(document.getElementById('maxResults').value);
-    browser.storage.sync.set({ enabled, maxResults }, function (result) {
+    browser.storage.sync.set({ maxResults }, function (result) {
         console.log('Settings saved');
     });
 });
 
-document.addEventListener('DOMContentLoaded',  function () {
+document.addEventListener('DOMContentLoaded', function () {
     applyBrowserTheme();
-    browser.storage.sync.get(['enabled', 'maxResults']).then(function (result) {
-        if (result.enabled === undefined || result.maxResults == null || typeof result.enabled !== 'boolean') {
-            result.enabled = true;
-        }
+    browser.storage.sync.get(['maxResults']).then(function (result) {
         if (result.maxResults === undefined || result.maxResults < 1 || result.maxResults == null) {
             result.maxResults = 100;
         }
-        document.getElementById('enabled').checked = result.enabled;
         document.getElementById('maxResults').value = result.maxResults;
         console.log('Settings loaded', result);
     })
