@@ -1,0 +1,11 @@
+{
+    "name": "youtube-timestamps",
+    "type": "module",
+    "scripts": {
+        "dist": "node dist.js"
+    },
+    "devDependencies": {
+        "@types/chrome": "^0.0.197",
+        "archiver": "^3.0.0"
+    }
+}
