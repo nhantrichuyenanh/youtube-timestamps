@@ -1,18 +1,35 @@
 {
     "manifest_version": 3,
-    "name": "YouTube Timestamps walmart-mod",
-    "description": "A modded version of the extention YouTube Timestamps by ris58h with a ui for options.",
-    "version": "1.1.1",
-    "browser_specific_settings": {
-      "gecko": {
-        "id": "youtube-timestamps-walmart-mod@walmart"
-      }
+    "name": "YouTube Timestamps",
+    "description": "Shows timestamps from YouTube comments on the progress bar.",
+    "author": "ris58h, walmart, Nhân Trí",
+    "homepage_url": "https://github.com/nhantrichuyenanh/youtube-timestamps",
+    "version": "0.0.1",
+    "permissions": ["declarativeNetRequestWithHostAccess", "storage"],
+    "host_permissions": ["https://www.youtube.com/watch?*"],
+    "icons": {
+      "16": "icon.png",
+      "32": "icon.png",
+      "48": "icon.png",
+      "64": "icon.png",
+      "128": "icon.png",
+      "256": "icon.png"
     },
-    "permissions": [
-      "declarativeNetRequestWithHostAccess","storage"
-    ],
-    "host_permissions": [
-      "https://www.youtube.com/"
+    "background": {
+        "scripts": ["background/background.js"],
+        "type": "module"
+    },
+    "options_ui": {
+      "page": "options/options.html",
+      "open_in_tab": false
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.youtube.com/*"],
+        "all_frames": true,
+        "js": ["content/content.js"],
+        "css": ["content/content.css"]
+      }
     ],
     "declarative_net_request": {
       "rule_resources": [
@@ -23,33 +40,10 @@
         }
       ]
     },
-    "icons": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    },
-    
-    "background": {
-        "scripts": ["background/background.js"],
-        "type": "module"
-    },
-    "content_scripts": [
-      {
-        "matches": [
-          "https://www.youtube.com/*",
-          "https://www.youtube-nocookie.com/embed/*"
-        ],
-        "all_frames": true,
-        "js": [
-          "content/content.js"
-        ],
-        "css": [
-          "content/content.css"
-        ]
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "youtube-timestamps-walmart-mod@walmart",
+        "strict_min_version": "109.0"
       }
-    ],
-
-    "action": {
-        "default_popup": "popup/options.html"
     }
-  }
+}
