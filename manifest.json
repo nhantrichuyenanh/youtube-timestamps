@@ -4,7 +4,7 @@
     "description": "Shows timestamps from YouTube comments on the progress bar.",
     "author": "ris58h, walmart, Nhân Trí",
     "homepage_url": "https://github.com/nhantrichuyenanh/youtube-timestamps",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "permissions": ["declarativeNetRequestWithHostAccess", "storage"],
     "host_permissions": ["https://www.youtube.com/watch?*"],
     "icons": {
@@ -42,8 +42,8 @@
     },
     "browser_specific_settings": {
       "gecko": {
-        "id": "youtube-timestamps-walmart-mod@walmart",
-        "strict_min_version": "109.0"
+        "id": "{693ae423-2df0-439e-aefd-9e821ebb08ef}",
+        "strict_min_version": "113.0"
       }
     }
 }
