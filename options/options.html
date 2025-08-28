@@ -1,15 +1,178 @@
 <!DOCTYPE html>
+<html lang="en">
+
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Options</title>
-  <link rel="stylesheet" href="options.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #15141a;
+      --muted: #666;
+      --card-bg: #f7f7f9;
+      --card-border: rgba(0, 0, 0, 0.08);
+      --accent-fallback: #ffffff;
+      --radius: 12px;
+      --gap-sm: 8px;
+      --gap-md: 16px;
+      --container-w: 340px;
+      --shadow: 0 6px 18px rgba(15, 15, 20, 0.05);
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.1);
+    }
+
+    html,
+    body {
+      height: auto;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--container-w);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: var(--gap-md);
+      margin-bottom: 12px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: block;
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      color: var(--fg);
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      color: var(--fg);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"]:focus {
+      border-color: Highlight;
+      box-shadow: 0 0 0 6px color-mix(in srgb, Highlight 10%, rgba(0, 0, 0, 0));
+    }
+
+    .save-indicator {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: var(--success);
+      background: var(--success-bg);
+      padding: 4px 8px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .save-indicator.show {
+      opacity: 1;
+    }
+
+    .info {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 10px 8px;
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 12px
+      }
+
+      .container {
+        max-width: calc(100% - 8px);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1b22;
+        --fg: #fbfbfe;
+        --muted: #bbb;
+        --card-bg: #2a2933;
+        --card-border: #444;
+        --accent-fallback: #00ddff;
+        --shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+        --success: #16a34a;
+        --success-bg: rgba(22, 163, 74, 0.2);
+      }
+
+      input[type="number"] {
+        background: #1c1b22;
+        border: 1px solid #444;
+        color: var(--fg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <h3>You will need to reload your youtube tab to reflect changes</h3>
-  <form>
-    <input type="number" id="maxResults" min="1">
-    <label for="maxResults">Max comments</label>
-    <button id="save" type="submit">Save</button>
-  </form>
+  <div class="container">
+    <div class="card" aria-labelledby="maxResultsLabel">
+      <label id="maxResultsLabel" for="maxResults">Max comments</label>
+
+      <div class="input-wrapper">
+        <input type="number" id="maxResults" name="maxResults" min="1" placeholder="e.g. 100" />
+        <div class="save-indicator" id="saveIndicator">Saved ✓</div>
+      </div>
+    </div>
+
+    <div class="card info" aria-hidden="false">
+      Settings are automatically saved. Reload your YouTube tab to reflect changes.
+    </div>
+  </div>
+
   <script src="options.js"></script>
+
 </body>
+
+</html>

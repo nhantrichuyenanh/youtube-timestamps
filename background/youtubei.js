@@ -15,6 +15,15 @@ export async function fetchComments(videoId) {
     while (prevToken !== token && pageCount < maxResults && comments.length < maxResults) {
         const commentsResponse = await fetchNext(token)
         prevToken = token
+
+        const mutations = commentsResponse.frameworkUpdates?.entityBatchUpdate?.mutations || []
+        const mutationMap = new Map()
+        for (const m of mutations) {
+            if (m && m.entityKey) {
+                mutationMap.set(m.entityKey, m)
+            }
+        }
+
         const items = pageCount === 0
             ? commentsResponse.onResponseReceivedEndpoints[1].reloadContinuationItemsCommand.continuationItems
             : commentsResponse.onResponseReceivedEndpoints[0].appendContinuationItemsAction.continuationItems
@@ -28,11 +37,11 @@ export async function fetchComments(videoId) {
                 if (commentThreadRenderer.comment) {
                     const cr = commentThreadRenderer.comment.commentRenderer
                     const commentId = cr.commentId
-                    const authorName = cr.authorText.simpleText
-                    const authorAvatar = cr.authorThumbnail.thumbnails[0].url
-                    const text = cr.contentText.runs
-                        .map(run => run.text)
-                        .join("")
+                    const authorName = cr.authorText?.simpleText
+                    const authorAvatar = cr.authorThumbnail?.thumbnails?.[0]?.url
+                    const text = cr.contentText?.runs
+                        ? cr.contentText.runs.map(run => run.text).join("")
+                        : ""
                     comments.push({
                         commentId,
                         authorName,
@@ -40,16 +49,24 @@ export async function fetchComments(videoId) {
                         text
                     })
                 } else if (commentThreadRenderer.commentViewModel) {
-                    const commentViewModel = commentThreadRenderer.commentViewModel.commentViewModel
-                    const commentKey = commentViewModel.commentKey
-                    //TODO collect in a map once instead of searching every time
-                    const mutation = commentsResponse.frameworkUpdates.entityBatchUpdate.mutations
-                        .find(e => e.entityKey === commentKey)
-                    const commentEntityPayload = mutation.payload.commentEntityPayload
-                    const commentId = commentEntityPayload.properties.commentId
-                    const authorName = commentEntityPayload.author.displayName
-                    const authorAvatar = commentEntityPayload.author.avatarThumbnailUrl
-                    const text = commentEntityPayload.properties.content.content
+                    const commentViewModel = commentThreadRenderer.commentViewModel.commentViewModel || commentThreadRenderer.commentViewModel
+                    const commentKey = commentViewModel?.commentKey
+                    const mutation = mutationMap.get(commentKey)
+
+                    if (!mutation) {
+                        continue
+                    }
+
+                    const commentEntityPayload = mutation.payload?.commentEntityPayload
+                    if (!commentEntityPayload) {
+                        continue
+                    }
+
+                    const commentId = commentEntityPayload.properties?.commentId
+                    const authorName = commentEntityPayload.author?.displayName
+                    const authorAvatar = commentEntityPayload.author?.avatarThumbnailUrl
+                    const text = commentEntityPayload.properties?.content?.content
+
                     comments.push({
                         commentId,
                         authorName,
@@ -73,7 +90,7 @@ function commentsContinuationToken(videoResponse) {
     return response
         .contents.twoColumnWatchNextResults.results.results
         .contents.find(e => e.itemSectionRenderer && e.itemSectionRenderer.sectionIdentifier === 'comment-item-section').itemSectionRenderer
-        .contents[0].continuationItemRenderer// When comments are disabled there is messageRenderer instead.
+        .contents[0].continuationItemRenderer
         ?.continuationEndpoint.continuationCommand.token
 }
 

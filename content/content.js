@@ -1,38 +1,38 @@
+// CONFIGURATION //
 const PREVIEW_BORDER_SIZE = 2
 const PREVIEW_MARGIN = 8
+const PREVIEW_MAX_HEIGHT = 175
+const PREVIEW_MIN_HEIGHT = 80
+const PREVIEW_WIDTH_PADDING = 6
+const PREVIEW_DEFAULT_WIDTH = 320
 
 main()
-
 onLocationHrefChange(() => {
     removeBar()
-    removeContextMenu()
     main()
 })
 
 document.addEventListener('click', e => {
-    const stamp = e.target.closest('.__youtube-timestamps__stamp')
-    if (!stamp) {
-        hideContextMenu()
+    if (!e.target.closest('.__youtube-timestamps__stamp')) {
+        hidePreview()
     }
 }, true)
+
 document.addEventListener('contextmenu', e => {
-    const stamp = e.target.closest('.__youtube-timestamps__stamp')
-    if (!stamp) {
-        hideContextMenu()
+    if (!e.target.closest('.__youtube-timestamps__stamp')) {
+        hidePreview()
     }
 }, true)
 
 function main() {
     const videoId = getVideoId()
-    if (!videoId) {
-        return
-    }
+    if (!videoId) return
+
     fetchTimeComments(videoId)
         .then(timeComments => {
-            if (videoId !== getVideoId()) {
-                return
+            if (videoId === getVideoId()) {
+                addTimeComments(timeComments)
             }
-            addTimeComments(timeComments)
         })
 }
 
@@ -41,9 +41,8 @@ function getVideoId() {
         return parseParams(window.location.href)['v']
     } else if (window.location.pathname.startsWith('/embed/')) {
         return window.location.pathname.substring('/embed/'.length)
-    } else {
-        return null
     }
+    return null
 }
 
 function getVideo() {
@@ -59,48 +58,126 @@ function fetchTimeComments(videoId) {
 function addTimeComments(timeComments) {
     const bar = getOrCreateBar()
     const videoDuration = getVideo().duration
-    let contextMenuTimeComment = null
+    const groupedComments = new Map()
+
     for (const tc of timeComments) {
-        if (tc.time > videoDuration) {
-            continue
+        if (typeof tc.time !== 'number' || tc.time > videoDuration) continue
+
+        const timeKey = tc.time.toString()
+        if (!groupedComments.has(timeKey)) {
+            groupedComments.set(timeKey, [])
         }
-        const stamp = document.createElement('div')
-        stamp.classList.add('__youtube-timestamps__stamp')
-        const offset = tc.time / videoDuration * 100
-        stamp.style.left = `calc(${offset}% - 2px)`
+        groupedComments.get(timeKey).push(tc)
+    }
+
+    for (const [timeKey, commentsAtTime] of groupedComments) {
+        const time = parseFloat(timeKey)
+        const stamp = createTimestampStamp(time, videoDuration, commentsAtTime)
         bar.appendChild(stamp)
-        stamp.addEventListener('mouseenter', () => {
-            showPreview(tc)
+    }
+}
+
+function createTimestampStamp(time, videoDuration, commentsAtTime) {
+    const stamp = document.createElement('div')
+    stamp.classList.add('__youtube-timestamps__stamp')
+
+    if (commentsAtTime.length > 1) {
+        stamp.classList.add('__youtube-timestamps__stamp--multiple')
+    }
+
+    const offset = time / videoDuration * 100
+    stamp.style.left = `calc(${offset}% - 2px)`
+
+    let currentCommentIndex = 0
+
+    stamp.addEventListener('mouseenter', () => {
+        showPreview(commentsAtTime[currentCommentIndex], commentsAtTime.length, currentCommentIndex)
+    })
+
+    stamp.addEventListener('mouseleave', hidePreview)
+
+    stamp.addEventListener('wheel', withWheelThrottle((deltaY) => {
+        handleWheelNavigation(deltaY, commentsAtTime, currentCommentIndex, (newIndex) => {
+            currentCommentIndex = newIndex
         })
-        stamp.addEventListener('mouseleave', () => {
-            hidePreview()
-        })
-        stamp.addEventListener('wheel', withWheelThrottle((deltaY) => {
-            const preview = getOrCreatePreview()
-            if (preview) {
-                preview.scrollBy(0, deltaY)
-            }
-        }))
-        stamp.addEventListener('contextmenu', e => {
+    }), { passive: false })
+
+
+    const openCommentInNewTab = createDebouncedCommentOpener()
+    stamp.addEventListener('auxclick', e => {
+        if (e.button === 1) {
             e.preventDefault()
             e.stopPropagation()
-            if (tc === contextMenuTimeComment && isContextMenuVisible()) {
-                hideContextMenu()
-            } else {
-                showContextMenu(tc, e.pageX, e.pageY)
-                contextMenuTimeComment = tc
-            }
-        })
+            openCommentInNewTab(commentsAtTime[currentCommentIndex])
+        }
+    })
+
+    return stamp
+}
+
+function handleWheelNavigation(deltaY, commentsAtTime, currentIndex, updateIndex) {
+    const SWITCH_THRESHOLD = 100
+    const preview = getOrCreatePreview()
+    const textElement = preview.querySelector('.__youtube-timestamps__preview__text')
+
+    if (!preview || preview.style.display === 'none') {
+        showPreview(commentsAtTime[currentIndex], commentsAtTime.length, currentIndex)
+        return
+    }
+
+    const switchTo = (newIndex) => {
+        updateIndex(newIndex)
+        showPreview(commentsAtTime[newIndex], commentsAtTime.length, newIndex)
+        const newText = document.querySelector('.__youtube-timestamps__preview__text')
+        if (newText) newText.scrollTop = 0
+    }
+
+    if (textElement && textElement.scrollHeight > textElement.clientHeight) {
+        const atTop = textElement.scrollTop <= 1
+        const atBottom = (textElement.scrollTop + textElement.clientHeight) >= (textElement.scrollHeight - 1)
+
+        if ((deltaY > 0 && !atBottom) || (deltaY < 0 && !atTop)) {
+            textElement.scrollBy({ top: deltaY, left: 0, behavior: 'auto' })
+            return
+        }
+
+        if (commentsAtTime.length > 1 && Math.abs(deltaY) >= SWITCH_THRESHOLD) {
+            const direction = deltaY > 0 ? 1 : -1
+            const newIndex = (currentIndex + direction + commentsAtTime.length) % commentsAtTime.length
+            switchTo(newIndex)
+        }
+        return
+    }
+
+    if (commentsAtTime.length > 1 && Math.abs(deltaY) >= SWITCH_THRESHOLD) {
+        const direction = deltaY > 0 ? 1 : -1
+        const newIndex = (currentIndex + direction + commentsAtTime.length) % commentsAtTime.length
+        switchTo(newIndex)
+    }
+}
+
+function createDebouncedCommentOpener() {
+    let lastOpenedAt = 0
+    const DEBOUNCE_MS = 400
+
+    return (comment) => {
+        const now = Date.now()
+        if (now - lastOpenedAt < DEBOUNCE_MS) return
+        lastOpenedAt = now
+
+        const videoId = getVideoId()
+        const commentId = comment?.commentId
+        if (videoId && commentId) {
+            window.open(`https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`, '_blank')
+        }
     }
 }
 
 function getOrCreateBar() {
     let bar = document.querySelector('.__youtube-timestamps__bar')
     if (!bar) {
-        let container = document.querySelector('#movie_player .ytp-timed-markers-container')
-        if (!container) {
-            container = document.querySelector('#movie_player .ytp-progress-list')
-        }
+        const container =   document.querySelector('#movie_player .ytp-timed-markers-container') ||
+                            document.querySelector('#movie_player .ytp-progress-list')
         bar = document.createElement('div')
         bar.classList.add('__youtube-timestamps__bar')
         container.appendChild(bar)
@@ -110,106 +187,234 @@ function getOrCreateBar() {
 
 function removeBar() {
     const bar = document.querySelector('.__youtube-timestamps__bar')
-    if (bar) {
-        bar.remove()
-    }
+    bar?.remove()
 }
 
 function getTooltip() {
     return document.querySelector('#movie_player .ytp-tooltip')
 }
 
-function showPreview(timeComment) {
+function getTooltipBgWidth() {
     const tooltip = getTooltip()
+    if (!tooltip) return PREVIEW_DEFAULT_WIDTH
+
+    const tooltipBg = tooltip.querySelector('.ytp-tooltip-bg')
+    if (tooltipBg) {
+        const rect = tooltipBg.getBoundingClientRect()
+        if (rect?.width > 0) return rect.width
+
+        const computed = window.getComputedStyle(tooltipBg).width
+        if (computed?.endsWith('px')) {
+            const parsed = parseFloat(computed)
+            if (!isNaN(parsed)) return parsed
+        }
+
+        if (tooltipBg.style?.width) {
+            const parsed = parseFloat(tooltipBg.style.width)
+            if (!isNaN(parsed)) return parsed
+        }
+    }
+
+    const progressBar = document.querySelector('#movie_player .ytp-progress-bar')
+    const rect = progressBar?.getBoundingClientRect()
+    return rect?.width > 0 ? rect.width * 0.9 : PREVIEW_DEFAULT_WIDTH
+}
+
+function applyPreviewWidth(preview, measuredWidth) {
+    let w = measuredWidth + PREVIEW_WIDTH_PADDING
+
+    const computed = window.getComputedStyle(preview)
+    const minW = parseFloat(computed.minWidth) || 0
+    const maxW = parseFloat(computed.maxWidth) || Infinity
+
+    if (minW > 0) w = Math.max(w, minW)
+    if (maxW > 0 && isFinite(maxW)) w = Math.min(w, maxW)
+
+    preview.style.width = Math.round(w) + 'px'
+}
+
+function showPreview(timeComment, totalComments = 1, currentIndex = 0) {
+    const tooltip = getTooltip()
+    if (!tooltip) return
+
     const preview = getOrCreatePreview()
     preview.style.display = ''
-    preview.querySelector('.__youtube-timestamps__preview__avatar').src = timeComment.authorAvatar
-    preview.querySelector('.__youtube-timestamps__preview__name').textContent = timeComment.authorName
+    preview.style.bottom = (PREVIEW_MARGIN + 12) + 'px'
+    preview.style.transform = 'translateY(0) scale(1)'
+
+    preview.querySelector('.__youtube-timestamps__preview__avatar').src = timeComment.authorAvatar || ''
+    preview.querySelector('.__youtube-timestamps__preview__name').textContent = timeComment.authorName || 'Unknown'
+
     const textNode = preview.querySelector('.__youtube-timestamps__preview__text')
     textNode.innerHTML = ''
-    textNode.appendChild(highlightTextFragment(timeComment.text, timeComment.timestamp))
 
-    const tooltipBgWidth = tooltip.querySelector('.ytp-tooltip-bg').style.width
-    const previewWidth = tooltipBgWidth.endsWith('px') ? parseFloat(tooltipBgWidth) : 160
-    preview.style.width = (previewWidth + 2*PREVIEW_BORDER_SIZE) + 'px'
+    const safeText = timeComment.text?.trim() || '(no comment text)'
+    const safeFragment = timeComment.timestamp || ''
 
-    const halfPreviewWidth = previewWidth / 2
+    textNode.style.opacity = safeText === '(no comment text)' ? '0.88' : '1'
+    textNode.appendChild(highlightTextFragment(safeText, safeFragment))
+
+    const navIndicator = preview.querySelector('.__youtube-timestamps__preview__nav')
+    if (totalComments > 1) {
+        navIndicator.textContent = `${currentIndex + 1} of ${totalComments} comments`
+        navIndicator.style.display = 'block'
+    } else {
+        navIndicator.style.display = 'none'
+    }
+
+    const measured = getTooltipBgWidth()
+    applyPreviewWidth(preview, measured)
+
+    preview.style.height = 'auto'
+    const contentHeight = preview.scrollHeight
+    const idealHeight = Math.max(PREVIEW_MIN_HEIGHT, Math.min(PREVIEW_MAX_HEIGHT, contentHeight))
+    preview.style.height = idealHeight + 'px'
+
+    positionPreview(preview, measured)
+    setTextMaxHeight(preview, idealHeight)
+}
+
+function positionPreview(preview, measured) {
+    const halfPreviewWidth = (preview.getBoundingClientRect().width || measured) / 2
     const playerRect = document.querySelector('#movie_player .ytp-progress-bar').getBoundingClientRect()
     const pivot = preview.parentElement.getBoundingClientRect().left
     const minPivot = playerRect.left + halfPreviewWidth
     const maxPivot = playerRect.right - halfPreviewWidth
+
     let previewLeft
     if (pivot < minPivot) {
         previewLeft = playerRect.left - pivot
     } else if (pivot > maxPivot) {
-        previewLeft = -previewWidth + (playerRect.right - pivot)
+        previewLeft = -preview.getBoundingClientRect().width + (playerRect.right - pivot)
     } else {
         previewLeft = -halfPreviewWidth
     }
+
     preview.style.left = (previewLeft - PREVIEW_BORDER_SIZE) + 'px'
-
-    const textAboveVideoPreview = tooltip.querySelector('.ytp-tooltip-edu')
-    if (textAboveVideoPreview) {
-        preview.style.bottom = (10 + textAboveVideoPreview.clientHeight) + 'px'
-    }
-
-    const tooltipTop = tooltip.style.top
-    if (tooltipTop.endsWith('px')) {
-        let previewHeight = parseFloat(tooltipTop) - 2*PREVIEW_MARGIN
-        if (textAboveVideoPreview) {
-            previewHeight -= textAboveVideoPreview.clientHeight
-        }
-        if (previewHeight > 0) {
-            preview.style.maxHeight = previewHeight + 'px'
-        }
-    }
-
-    const highlightedTextFragment = preview.querySelector('.__youtube-timestamps__preview__text-stamp')
-    highlightedTextFragment.scrollIntoView({block: 'nearest'})
 }
+
+function setTextMaxHeight(preview, idealHeight) {
+    const textNode = preview.querySelector('.__youtube-timestamps__preview__text')
+    const headerEl = preview.querySelector('.__youtube-timestamps__preview__author')
+    const navIndicator = preview.querySelector('.__youtube-timestamps__preview__nav')
+
+    const headerH = headerEl?.offsetHeight || 0
+    const navH = navIndicator?.offsetHeight || 0
+    const paddingTotal = 32
+    const textMax = Math.max(24, idealHeight - headerH - navH - paddingTotal)
+
+    textNode.style.maxHeight = textMax + 'px'
+}
+
+let tooltipBgResizeObserver = null
+
+function ensureTooltipBgObserver() {
+    const tooltip = getTooltip()
+    if (!tooltip) return
+
+    const tooltipBg = tooltip.querySelector('.ytp-tooltip-bg')
+    if (tooltipBgResizeObserver?._observed === tooltipBg) return
+
+    tooltipBgResizeObserver?.disconnect()
+    tooltipBgResizeObserver = null
+
+    if (tooltipBg) {
+        tooltipBgResizeObserver = new ResizeObserver(() => {
+            const preview = document.querySelector('.__youtube-timestamps__preview')
+            if (preview?.style.display !== 'none') {
+                const measured = getTooltipBgWidth()
+                applyPreviewWidth(preview, measured)
+                positionPreview(preview, measured)
+            }
+        })
+        tooltipBgResizeObserver._observed = tooltipBg
+        tooltipBgResizeObserver.observe(tooltipBg)
+    }
+}
+
+function handleResize() {
+    const preview = document.querySelector('.__youtube-timestamps__preview')
+    if (preview?.style.display !== 'none') {
+        const measured = getTooltipBgWidth()
+        applyPreviewWidth(preview, measured)
+    }
+    ensureTooltipBgObserver()
+}
+
+window.addEventListener('resize', handleResize)
+document.addEventListener('fullscreenchange', handleResize)
+ensureTooltipBgObserver()
 
 function getOrCreatePreview() {
     const tooltip = getTooltip()
+    if (!tooltip) return document.createElement('div')
+
     let preview = tooltip.querySelector('.__youtube-timestamps__preview')
     if (!preview) {
-        preview = document.createElement('div')
-        preview.classList.add('__youtube-timestamps__preview')
+        preview = createPreviewElement()
+
         const previewWrapper = document.createElement('div')
         previewWrapper.classList.add('__youtube-timestamps__preview-wrapper')
         previewWrapper.appendChild(preview)
         tooltip.insertAdjacentElement('afterbegin', previewWrapper)
-
-        const authorElement = document.createElement('div')
-        authorElement.classList.add('__youtube-timestamps__preview__author')
-        preview.appendChild(authorElement)
-
-        const avatarElement = document.createElement('img')
-        avatarElement.classList.add('__youtube-timestamps__preview__avatar')
-        authorElement.appendChild(avatarElement)
-
-        const nameElement = document.createElement('span')
-        nameElement.classList.add('__youtube-timestamps__preview__name')
-        authorElement.appendChild(nameElement)
-
-        const textElement = document.createElement('div')
-        textElement.classList.add('__youtube-timestamps__preview__text')
-        preview.appendChild(textElement)
     }
+    return preview
+}
+
+function createPreviewElement() {
+    const preview = document.createElement('div')
+    preview.classList.add('__youtube-timestamps__preview')
+
+    const authorElement = document.createElement('div')
+    authorElement.classList.add('__youtube-timestamps__preview__author')
+    preview.appendChild(authorElement)
+
+    const avatarElement = document.createElement('img')
+    avatarElement.classList.add('__youtube-timestamps__preview__avatar')
+    authorElement.appendChild(avatarElement)
+
+    const nameElement = document.createElement('span')
+    nameElement.classList.add('__youtube-timestamps__preview__name')
+    authorElement.appendChild(nameElement)
+
+    const textElement = document.createElement('div')
+    textElement.classList.add('__youtube-timestamps__preview__text')
+    preview.appendChild(textElement)
+
+    const navElement = document.createElement('div')
+    navElement.classList.add('__youtube-timestamps__preview__nav')
+    navElement.style.display = 'none'
+    preview.appendChild(navElement)
+
+    textElement.addEventListener('wheel', (ev) => {
+        if (textElement.scrollHeight > textElement.clientHeight) {
+            if (ev.cancelable) ev.preventDefault()
+            textElement.scrollBy({ top: ev.deltaY, left: 0, behavior: 'auto' })
+        }
+    }, { passive: false })
+
     return preview
 }
 
 function highlightTextFragment(text, fragment) {
     const result = document.createDocumentFragment()
-    const parts = text.split(fragment)
+    const safeText = String(text)
+    const safeFragment = String(fragment)
+
+    if (!safeFragment || safeText.indexOf(safeFragment) === -1) {
+        result.appendChild(document.createTextNode(safeText))
+        return result
+    }
+
+    const parts = safeText.split(safeFragment)
     for (let i = 0; i < parts.length; i++) {
-        const part = parts[i]
-        if (part) {
-            result.appendChild(document.createTextNode(part))
+        if (parts[i]) {
+            result.appendChild(document.createTextNode(parts[i]))
         }
         if (i < parts.length - 1) {
             const fragmentNode = document.createElement('span')
             fragmentNode.classList.add('__youtube-timestamps__preview__text-stamp')
-            fragmentNode.textContent = fragment
+            fragmentNode.textContent = safeFragment
             result.appendChild(fragmentNode)
         }
     }
@@ -224,14 +429,13 @@ function hidePreview() {
 }
 
 function parseParams(href) {
-    const noHash = href.split('#')[0]
-    const paramString = noHash.split('?')[1]
+    const paramString = href.split('#')[0].split('?')[1]
     const params = {}
+
     if (paramString) {
-        const paramsArray = paramString.split('&')
-        for (const kv of paramsArray) {
-            const tmparr = kv.split('=')
-            params[tmparr[0]] = tmparr[1]
+        for (const kv of paramString.split('&')) {
+            const [key, value] = kv.split('=')
+            params[key] = value
         }
     }
     return params
@@ -240,19 +444,16 @@ function parseParams(href) {
 function withWheelThrottle(callback) {
     let deltaYAcc = 0
     let afRequested = false
-    return (e) => {
-        e.preventDefault()
 
+    return (e) => {
+        if (e.cancelable) e.preventDefault()
         deltaYAcc += e.deltaY
 
-        if (afRequested) {
-            return
-        }
+        if (afRequested) return
         afRequested = true
 
         window.requestAnimationFrame(() => {
             callback(deltaYAcc)
-
             deltaYAcc = 0
             afRequested = false
         })
@@ -268,87 +469,4 @@ function onLocationHrefChange(callback) {
         }
     })
     observer.observe(document.querySelector("body"), {childList: true, subtree: true})
-}
-
-function showContextMenu(timeComment, x, y) {
-    const contextMenu = getOrCreateContextMenu()
-    contextMenu.style.display = ''
-    adjustContextMenuSizeAndPosition(contextMenu, x, y)
-    fillContextMenuData(contextMenu, timeComment)
-}
-
-function fillContextMenuData(contextMenu, timeComment) {
-    contextMenu.dataset.commentId = timeComment.commentId
-}
-
-function adjustContextMenuSizeAndPosition(contextMenu, x, y) {
-    const menuHeight = contextMenu.querySelector('.ytp-panel-menu').clientHeight
-    contextMenu.style.height = menuHeight + 'px'
-    contextMenu.style.top = (y - menuHeight) + 'px'
-    contextMenu.style.left = x + 'px'
-}
-
-function getOrCreateContextMenu() {
-    let contextMenu = getContextMenu()
-    if (!contextMenu) {
-        contextMenu = document.createElement('div')
-        contextMenu.id = '__youtube-timestamps__context-menu'
-        contextMenu.classList.add('ytp-popup')
-        document.body.appendChild(contextMenu)
-
-        const panelElement = document.createElement('div')
-        panelElement.classList.add('ytp-panel')
-        contextMenu.appendChild(panelElement)
-
-        const menuElement = document.createElement('div')
-        menuElement.classList.add('ytp-panel-menu')
-        panelElement.appendChild(menuElement)
-
-        menuElement.appendChild(menuItemElement("Open in New Tab", () => {
-            const videoId = getVideoId()
-            const commentId = contextMenu.dataset.commentId
-            window.open(`https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`, '_blank')
-        }))
-    }
-    return contextMenu
-}
-
-function menuItemElement(label, callback) {
-    const itemElement = document.createElement('div')
-    itemElement.classList.add('ytp-menuitem')
-    itemElement.addEventListener('click', callback)
-
-    const iconElement = document.createElement('div')
-    iconElement.classList.add('ytp-menuitem-icon')
-    itemElement.appendChild(iconElement)
-
-    const labelElement = document.createElement('div')
-    labelElement.classList.add('ytp-menuitem-label')
-    labelElement.textContent = label
-    itemElement.appendChild(labelElement)
-
-    return itemElement
-}
-
-function getContextMenu() {
-    return document.querySelector('#__youtube-timestamps__context-menu')
-}
-
-function isContextMenuVisible() {
-    const contextMenu = getContextMenu()
-    return contextMenu && !contextMenu.style.display
-}
-
-function hideContextMenu() {
-    const contextMenu = getContextMenu()
-    if (contextMenu) {
-        contextMenu.style.display = 'none'
-    }
-}
-
-function removeContextMenu() {
-    const contextMenu = getContextMenu()
-    if (contextMenu) {
-        contextMenu.remove()
-    }
 }
