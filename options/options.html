@@ -91,25 +91,6 @@
       box-shadow: 0 0 0 6px color-mix(in srgb, Highlight 10%, rgba(0, 0, 0, 0));
     }
 
-    .save-indicator {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.85rem;
-      color: var(--success);
-      background: var(--success-bg);
-      padding: 4px 8px;
-      border-radius: 6px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    .save-indicator.show {
-      opacity: 1;
-    }
-
     .info {
       text-align: center;
       font-size: 0.9rem;
@@ -162,12 +143,11 @@
 
       <div class="input-wrapper">
         <input type="number" id="maxResults" name="maxResults" min="1" placeholder="e.g. 100" />
-        <div class="save-indicator" id="saveIndicator">Saved ✓</div>
       </div>
     </div>
 
     <div class="card info" aria-hidden="false">
-      Settings are automatically saved. Reload your YouTube tab to reflect changes.
+      Settings are automatically saved. Refresh YouTube tab to reflect changes.
     </div>
   </div>
 
