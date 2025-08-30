@@ -4,7 +4,7 @@
     "description": "Shows timestamps from YouTube comments on the progress bar.",
     "author": "ris58h, walmart, Nhân Trí",
     "homepage_url": "https://github.com/nhantrichuyenanh/youtube-timestamps",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "permissions": ["declarativeNetRequestWithHostAccess", "storage"],
     "host_permissions": ["https://www.youtube.com/watch?*"],
     "icons": {

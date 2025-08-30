@@ -1,9 +1,9 @@
 // CONFIGURATION //
 const PREVIEW_BORDER_SIZE = 2
-const PREVIEW_MARGIN = 8
+const PREVIEW_MARGIN = 10
 const PREVIEW_MAX_HEIGHT = 175
-const PREVIEW_MIN_HEIGHT = 80
-const PREVIEW_WIDTH_PADDING = 6
+const PREVIEW_MIN_HEIGHT = 40
+const PREVIEW_WIDTH_PADDING = 5
 const PREVIEW_DEFAULT_WIDTH = 320
 
 main()
@@ -11,18 +11,6 @@ onLocationHrefChange(() => {
     removeBar()
     main()
 })
-
-document.addEventListener('click', e => {
-    if (!e.target.closest('.__youtube-timestamps__stamp')) {
-        hidePreview()
-    }
-}, true)
-
-document.addEventListener('contextmenu', e => {
-    if (!e.target.closest('.__youtube-timestamps__stamp')) {
-        hidePreview()
-    }
-}, true)
 
 function main() {
     const videoId = getVideoId()
