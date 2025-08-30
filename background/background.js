@@ -16,9 +16,6 @@ async function fetchTimeComments(videoId) {
     const timeComments = []
     for (const comment of comments) {
         const tsContexts = getTimestampContexts(comment.text)
-        if (isChaptersComment(tsContexts)) {
-            continue
-        }
         for (const tsContext of tsContexts) {
             timeComments.push({
                 commentId: comment.commentId,
@@ -31,10 +28,6 @@ async function fetchTimeComments(videoId) {
         }
     }
     return timeComments
-}
-
-function isChaptersComment(tsContexts) {
-    return tsContexts.length >= 3 && tsContexts[0].time === 0
 }
 
 async function fetchComments(videoId) {
