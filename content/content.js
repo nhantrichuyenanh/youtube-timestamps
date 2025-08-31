@@ -1,10 +1,16 @@
 // CONFIGURATION //
-const PREVIEW_BORDER_SIZE = 2
-const PREVIEW_MARGIN = 10
-const PREVIEW_MAX_HEIGHT = 175
-const PREVIEW_MIN_HEIGHT = 40
-const PREVIEW_WIDTH_PADDING = 5
-const PREVIEW_DEFAULT_WIDTH = 320
+const PREVIEW_DEFAULT_WIDTH     = 320
+const PREVIEW_MAX_HEIGHT        = 175
+const PREVIEW_MIN_HEIGHT        = 40
+const PREVIEW_BORDER_SIZE       = 2
+const PREVIEW_TOOLTIP_MARGIN    = 12
+const PREVIEW_MARGIN            = 10
+const PREVIEW_WIDTH_PADDING     = 5
+const PREVIEW_PADDING_TOTAL     = 32
+const PREVIEW_TEXT_MIN_HEIGHT   = 24
+const WHEEL_SWITCH_THRESHOLD    = 100
+const WHEEL_DEBOUNCE_MS         = 400
+const SCROLL_TOLERANCE          = 1
 
 main()
 onLocationHrefChange(() => {
@@ -104,7 +110,7 @@ function createTimestampStamp(time, videoDuration, commentsAtTime) {
 }
 
 function handleWheelNavigation(deltaY, commentsAtTime, currentIndex, updateIndex) {
-    const SWITCH_THRESHOLD = 100
+    const SWITCH_THRESHOLD = WHEEL_SWITCH_THRESHOLD
     const preview = getOrCreatePreview()
     const textElement = preview.querySelector('.__youtube-timestamps__preview__text')
 
@@ -121,8 +127,8 @@ function handleWheelNavigation(deltaY, commentsAtTime, currentIndex, updateIndex
     }
 
     if (textElement && textElement.scrollHeight > textElement.clientHeight) {
-        const atTop = textElement.scrollTop <= 1
-        const atBottom = (textElement.scrollTop + textElement.clientHeight) >= (textElement.scrollHeight - 1)
+        const atTop = textElement.scrollTop <= SCROLL_TOLERANCE
+        const atBottom = (textElement.scrollTop + textElement.clientHeight) >= (textElement.scrollHeight - SCROLL_TOLERANCE)
 
         if ((deltaY > 0 && !atBottom) || (deltaY < 0 && !atTop)) {
             textElement.scrollBy({ top: deltaY, left: 0, behavior: 'auto' })
@@ -146,7 +152,7 @@ function handleWheelNavigation(deltaY, commentsAtTime, currentIndex, updateIndex
 
 function createDebouncedCommentOpener() {
     let lastOpenedAt = 0
-    const DEBOUNCE_MS = 400
+    const DEBOUNCE_MS = WHEEL_DEBOUNCE_MS
 
     return (comment) => {
         const now = Date.now()
@@ -227,7 +233,7 @@ function showPreview(timeComment, totalComments = 1, currentIndex = 0) {
 
     const preview = getOrCreatePreview()
     preview.style.display = ''
-    preview.style.bottom = (PREVIEW_MARGIN + 12) + 'px'
+    preview.style.bottom = (PREVIEW_MARGIN + PREVIEW_TOOLTIP_MARGIN) + 'px'
     preview.style.transform = 'translateY(0) scale(1)'
 
     preview.querySelector('.__youtube-timestamps__preview__avatar').src = timeComment.authorAvatar || ''
@@ -288,8 +294,8 @@ function setTextMaxHeight(preview, idealHeight) {
 
     const headerH = headerEl?.offsetHeight || 0
     const navH = navIndicator?.offsetHeight || 0
-    const paddingTotal = 32
-    const textMax = Math.max(24, idealHeight - headerH - navH - paddingTotal)
+    const paddingTotal = PREVIEW_PADDING_TOTAL
+    const textMax = Math.max(PREVIEW_TEXT_MIN_HEIGHT, idealHeight - headerH - navH - paddingTotal)
 
     textNode.style.maxHeight = textMax + 'px'
 }
