@@ -1,20 +1,57 @@
-// CONFIGURATION //
-const PREVIEW_DEFAULT_WIDTH     = 320
-const PREVIEW_MAX_HEIGHT        = 175
-const PREVIEW_MIN_HEIGHT        = 40
-const PREVIEW_BORDER_SIZE       = 2
-const PREVIEW_TOOLTIP_MARGIN    = 12
-const PREVIEW_MARGIN            = 10
-const PREVIEW_WIDTH_PADDING     = 5
-const PREVIEW_PADDING_TOTAL     = 32
-const PREVIEW_TEXT_MIN_HEIGHT   = 24
-const WHEEL_SWITCH_THRESHOLD    = 100
-const WHEEL_DEBOUNCE_MS         = 400
-const SCROLL_TOLERANCE          = 1
+// CONFIGURATION // cuz this add-on is experimental, subject to future changes
+const PREVIEW_DEFAULT_WIDTH     = 320
+const PREVIEW_MAX_HEIGHT        = 175
+const PREVIEW_MIN_HEIGHT        = 40
+const PREVIEW_BORDER_SIZE       = 2
+const PREVIEW_TOOLTIP_MARGIN    = 12
+const PREVIEW_MARGIN            = 10
+const PREVIEW_WIDTH_PADDING     = 5
+const PREVIEW_PADDING_TOTAL     = 32
+const PREVIEW_TEXT_MIN_HEIGHT   = 24
+const WHEEL_SWITCH_THRESHOLD    = 100
+const WHEEL_DEBOUNCE_MS         = 400
+const SCROLL_TOLERANCE          = 1
+const OVERLAY_SPACING           = 75
+const TIME_TOLERANCE            = 0.5
+const OVERLAY_FADE_DURATION     = 500
+
+// LIVE OVERLAY //
+let timeComments = []
+let activeOverlays = []
+let lastVideoTime = 0
+let overlayContainer = null
+
+// OPTIONS MENU //
+let OVERLAY_DURATION = 4000
+let MAX_CONCURRENT_OVERLAYS = 3
+let OVERLAY_OPACITY = 1
+
+browser.storage.sync.get(['maxConcurrentOverlays','overlayDuration','overlayOpacity'])
+.then((items) => {
+    if (items.hasOwnProperty('maxConcurrentOverlays') && typeof items.maxConcurrentOverlays === 'number') {
+        MAX_CONCURRENT_OVERLAYS = items.maxConcurrentOverlays
+    }
+    if (items.hasOwnProperty('overlayDuration') && typeof items.overlayDuration === 'number') {
+        OVERLAY_DURATION = items.overlayDuration
+    }
+    if (items.hasOwnProperty('overlayOpacity') && typeof items.overlayOpacity === 'number') {
+        OVERLAY_OPACITY = items.overlayOpacity
+    }
+
+    const existing = document.querySelectorAll('.__youtube-timestamps__live-overlay')
+    existing.forEach(el => {
+        el.style.setProperty('--yt-user-opacity', String(OVERLAY_OPACITY))
+    })
+})
+.catch((err) => {
+})
 
 main()
 onLocationHrefChange(() => {
     removeBar()
+    removeOverlayContainer()
+    timeComments = []
+    activeOverlays = []
     main()
 })
 
@@ -23,9 +60,11 @@ function main() {
     if (!videoId) return
 
     fetchTimeComments(videoId)
-        .then(timeComments => {
+        .then(comments => {
             if (videoId === getVideoId()) {
-                addTimeComments(timeComments)
+                timeComments = comments
+                addTimeComments(comments)
+                startVideoTimeMonitoring()
             }
         })
 }
@@ -47,6 +86,219 @@ function fetchTimeComments(videoId) {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({type: 'fetchTimeComments', videoId}, resolve)
     })
+}
+
+function startVideoTimeMonitoring() {
+    const video = getVideo()
+    if (!video) return
+
+    video.removeEventListener('timeupdate', handleTimeUpdate)
+    video.addEventListener('timeupdate', handleTimeUpdate)
+}
+
+function handleTimeUpdate(event) {
+    const video = event.target
+    const currentTime = video.currentTime
+
+    if (video.paused || Math.abs(currentTime - lastVideoTime) < 0.1) {
+        lastVideoTime = currentTime
+        return
+    }
+
+    const commentsToShow = timeComments.filter(tc => {
+        const timeDiff = Math.abs(tc.time - currentTime)
+        return timeDiff <= TIME_TOLERANCE && !isCommentCurrentlyShown(tc)
+    })
+
+    commentsToShow.forEach(showLiveOverlay)
+    lastVideoTime = currentTime
+}
+
+function isCommentCurrentlyShown(comment) {
+    return activeOverlays.some(overlay =>
+        overlay.commentId === comment.commentId &&
+        overlay.timestamp === comment.timestamp
+    )
+}
+
+function showLiveOverlay(timeComment) {
+    if (activeOverlays.length >= MAX_CONCURRENT_OVERLAYS) {
+        const oldestOverlay = activeOverlays.shift()
+        removeOverlay(oldestOverlay)
+    }
+
+    const container = getOrCreateOverlayContainer()
+    const overlay = createOverlayElement(timeComment)
+
+    container.appendChild(overlay)
+
+    const overlayData = {
+        element: overlay,
+        commentId: timeComment.commentId,
+        timestamp: timeComment.timestamp,
+        startTime: Date.now()
+    }
+    activeOverlays.push(overlayData)
+
+    requestAnimationFrame(() => {
+        overlay.style.opacity = String(OVERLAY_OPACITY)
+        overlay.style.transform = 'translateX(0)'
+    })
+
+    setTimeout(() => {
+        removeOverlay(overlayData)
+    }, OVERLAY_DURATION)
+}
+
+function removeOverlay(overlayData) {
+    if (!overlayData || !overlayData.element) return
+    const overlay = overlayData.element
+
+    overlay.style.opacity = '0'
+    overlay.style.transform = 'translateY(-12px)'
+
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+    }, OVERLAY_FADE_DURATION)
+
+    const idx = activeOverlays.indexOf(overlayData)
+    if (idx > -1) {
+        activeOverlays.splice(idx, 1)
+        return
+    }
+    const matchIdx = activeOverlays.findIndex(o =>
+        o && (o.commentId === overlayData.commentId || o.timestamp === overlayData.timestamp)
+    )
+    if (matchIdx > -1) activeOverlays.splice(matchIdx, 1)
+}
+
+function formatCommentTextWithTimestampSpans(text) {
+    const frag = document.createDocumentFragment()
+    if (!text) return frag
+    const regex = /(\d?\d:)?(\d?\d:)\d\d/g
+    let lastIndex = 0
+    let match
+    while ((match = regex.exec(text)) !== null) {
+        const from = match.index
+        const to = regex.lastIndex
+        if (from > lastIndex) {
+            frag.appendChild(document.createTextNode(text.slice(lastIndex, from)))
+        }
+        const ts = text.slice(from, to)
+        const span = document.createElement('span')
+        span.className = '__youtube-timestamps__live-overlay__text-stamp'
+        span.textContent = ts
+        span.setAttribute('role', 'button')
+        span.tabIndex = 0
+        span.addEventListener('click', (ev) => {
+            ev.stopPropagation()
+            const secs = parseTimestampToSeconds(ts)
+            const video = getVideo && getVideo()
+            if (video && secs != null) {
+                video.currentTime = Math.max(0, Math.min(video.duration || Infinity, secs))
+                video.play().catch(()=>{})
+            }
+        })
+        span.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault()
+                span.click()
+            }
+        })
+        frag.appendChild(span)
+        lastIndex = to
+    }
+    if (lastIndex < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)))
+    }
+    return frag
+}
+
+function parseTimestampToSeconds(ts) {
+    if (!ts || typeof ts !== 'string') return null
+    const parts = ts.split(':').map(p => parseInt(p, 10))
+    if (parts.some(p => Number.isNaN(p))) return null
+    if (parts.length === 1) return parts[0]
+    if (parts.length === 2) {
+        const [m, s] = parts
+        if (s > 59) return null
+        return m * 60 + s
+    }
+    const last3 = parts.slice(-3)
+    const [h, m, s] = last3
+    if (s > 59 || m > 59) return null
+    return h * 3600 + m * 60 + s
+}
+
+function formatSecondsToHMS(sec) {
+    if (typeof sec !== 'number' || Number.isNaN(sec)) return ''
+    sec = Math.floor(sec)
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    return `${m}:${String(s).padStart(2,'0')}`
+}
+
+function createOverlayElement(timeComment) {
+    const overlay = document.createElement('div')
+    overlay.className = '__youtube-timestamps__live-overlay'
+
+    const avatar = document.createElement('img')
+    avatar.className = '__youtube-timestamps__live-overlay__avatar'
+    avatar.alt = timeComment.authorName || 'User'
+    avatar.src = timeComment.authorAvatar || ''
+
+    const content = document.createElement('div')
+    content.className = '__youtube-timestamps__live-overlay__content'
+
+    const authorName = document.createElement('div')
+    authorName.className = '__youtube-timestamps__live-overlay__author'
+    authorName.textContent = timeComment.authorName || 'Unknown'
+
+    const commentText = document.createElement('div')
+    commentText.className = '__youtube-timestamps__live-overlay__text'
+    commentText.appendChild(formatCommentTextWithTimestampSpans(timeComment.text || ''))
+
+    content.appendChild(authorName)
+    content.appendChild(commentText)
+
+    overlay.appendChild(avatar)
+    overlay.appendChild(content)
+
+    overlay.addEventListener('auxclick', (e) => {
+        if (e.button === 1) {
+            e.preventDefault()
+            const videoId = getVideoId()
+            const commentId = timeComment.commentId
+            if (videoId && commentId) {
+                window.open(`https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`, '_blank')
+            }
+        }
+    })
+
+    return overlay
+}
+
+function getOrCreateOverlayContainer() {
+    if (!overlayContainer) {
+        overlayContainer = document.createElement('div')
+        overlayContainer.classList.add('__youtube-timestamps__overlay-container')
+
+        const player = document.querySelector('#movie_player')
+        if (player) {
+            player.appendChild(overlayContainer)
+        }
+    }
+    return overlayContainer
+}
+
+function removeOverlayContainer() {
+    if (overlayContainer) {
+        overlayContainer.remove()
+        overlayContainer = null
+    }
+    activeOverlays = []
 }
 
 function addTimeComments(timeComments) {
@@ -422,19 +674,6 @@ function hidePreview() {
     }
 }
 
-function parseParams(href) {
-    const paramString = href.split('#')[0].split('?')[1]
-    const params = {}
-
-    if (paramString) {
-        for (const kv of paramString.split('&')) {
-            const [key, value] = kv.split('=')
-            params[key] = value
-        }
-    }
-    return params
-}
-
 function withWheelThrottle(callback) {
     let deltaYAcc = 0
     let afRequested = false
@@ -452,6 +691,19 @@ function withWheelThrottle(callback) {
             afRequested = false
         })
     }
+}
+
+function parseParams(href) {
+    const paramString = href.split('#')[0].split('?')[1]
+    const params = {}
+
+    if (paramString) {
+        for (const kv of paramString.split('&')) {
+            const [key, value] = kv.split('=')
+            params[key] = value
+        }
+    }
+    return params
 }
 
 function onLocationHrefChange(callback) {

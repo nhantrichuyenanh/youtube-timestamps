@@ -132,6 +132,117 @@
     box-sizing: border-box;
 }
 
+.__youtube-timestamps__overlay-container {
+    position: absolute;
+    top: 15px;
+    left: 6px;
+    width: auto;
+    height: auto;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.__youtube-timestamps__live-overlay {
+    position: relative;
+    left: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    max-width: 320px;
+    min-width: 220px;
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: transform 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.32s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    box-sizing: border-box;
+    will-change: transform, opacity, top;
+}
+
+.__youtube-timestamps__live-overlay:hover {
+    transform: translateY(0) translateZ(0);
+    box-shadow:
+        0 12px 44px rgba(0, 0, 0, 0.45),
+        0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.__youtube-timestamps__live-overlay__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.06);
+    border: 0px solid rgb(0, 0, 0);
+    flex-shrink: 0;
+}
+
+.__youtube-timestamps__live-overlay__content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    color: #fff;
+}
+
+.__youtube-timestamps__live-overlay__author {
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.__youtube-timestamps__live-overlay__text {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.__youtube-timestamps__live-overlay__text-stamp {
+    color: #3ea6ff;
+    font-weight: 600;
+    background: rgba(62, 166, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(62, 166, 255, 0.2);
+    transition: all 0.2s ease;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.__youtube-timestamps__live-overlay__text-stamp:hover {
+    background: rgba(62, 166, 255, 0.2);
+    border-color: rgba(62, 166, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(62, 166, 255, 0.2);
+}
+
+.__youtube-timestamps__live-overlay__text-stamp:focus {
+    outline: none;
+    background: rgba(62, 166, 255, 0.25);
+    border-color: rgba(62, 166, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(62, 166, 255, 0.3);
+}
+
+.__youtube-timestamps__live-overlay.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* LIGHT MODE */
 @media (prefers-color-scheme: light) {
     .__youtube-timestamps__preview {
@@ -142,15 +253,27 @@
             0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .__youtube-timestamps__preview__avatar {
-        border: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
     .__youtube-timestamps__preview__name {
         color: #0f0f0f;
     }
 
     .__youtube-timestamps__preview__text {
+        color: rgba(15, 15, 15, 0.9);
+    }
+
+    .__youtube-timestamps__live-overlay {
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.15),
+            0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .__youtube-timestamps__live-overlay__author {
+        color: #0f0f0f;
+    }
+
+    .__youtube-timestamps__live-overlay__text {
         color: rgba(15, 15, 15, 0.9);
     }
 }
@@ -176,4 +299,26 @@ html[dark] .__youtube-timestamps__preview__name {
 [dark] .__youtube-timestamps__preview__text,
 html[dark] .__youtube-timestamps__preview__text {
     color: rgba(255, 255, 255, 0.95);
+}
+
+.dark .__youtube-timestamps__live-overlay,
+[dark] .__youtube-timestamps__live-overlay,
+html[dark] .__youtube-timestamps__live-overlay {
+    background: rgba(25, 25, 25, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.dark .__youtube-timestamps__live-overlay__author,
+[dark] .__youtube-timestamps__live-overlay__author,
+html[dark] .__youtube-timestamps__live-overlay__author {
+    color: #ffffff;
+}
+
+.dark .__youtube-timestamps__live-overlay__text,
+[dark] .__youtube-timestamps__live-overlay__text,
+html[dark] .__youtube-timestamps__live-overlay__text {
+    color: rgba(255, 255, 255, 0.92);
 }

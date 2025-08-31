@@ -12,16 +12,14 @@
       --muted: #666;
       --card-bg: #f7f7f9;
       --card-border: rgba(0, 0, 0, 0.08);
-      --accent-fallback: #ffffff;
       --radius: 12px;
       --gap-sm: 8px;
       --gap-md: 16px;
-      --container-w: 340px;
+      --container-w: 700px;
       --shadow: 0 6px 18px rgba(15, 15, 20, 0.05);
     }
 
     html,
-
     body {
       margin: 0;
       padding: 20px;
@@ -36,6 +34,9 @@
     }
 
     .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap-md);
       width: 100%;
       max-width: var(--container-w);
     }
@@ -44,16 +45,17 @@
       background: var(--card-bg);
       border-radius: var(--radius);
       padding: var(--gap-md);
-      margin-bottom: 12px;
       border: 1px solid var(--card-border);
       box-shadow: var(--shadow);
     }
 
     label {
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.98rem;
       font-weight: 600;
-      margin: 0 0 10px 0;
+      margin-bottom: 10px;
       color: var(--fg);
     }
 
@@ -61,7 +63,8 @@
       position: relative;
     }
 
-    input[type="number"] {
+    input[type="number"],
+    input[type="range"] {
       width: 100%;
       height: 44px;
       padding: 0 12px;
@@ -85,7 +88,14 @@
       box-shadow: 0 0 0 6px color-mix(in srgb, Highlight 10%, rgba(0, 0, 0, 0));
     }
 
+    #overlayOpacityValue {
+      font-weight: normal;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+
     .info {
+      grid-column: span 2;
       text-align: center;
       font-size: 0.9rem;
       color: var(--muted);
@@ -99,11 +109,11 @@
         --muted: #bbb;
         --card-bg: #2a2933;
         --card-border: #444;
-        --accent-fallback: #ffffff;
         --shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
       }
 
-      input[type="number"] {
+      input[type="number"],
+      input[type="range"] {
         background: #1c1b22;
         border: 1px solid #444;
         color: var(--fg);
@@ -114,21 +124,45 @@
 
 <body>
   <div class="container">
-    <div class="card" aria-labelledby="maxResultsLabel">
-      <label id="maxResultsLabel" for="maxResults">Max comments</label>
-
+    <div class="card">
+      <label for="maxResults">Max comments</label>
       <div class="input-wrapper">
         <input type="number" id="maxResults" name="maxResults" min="1" placeholder="e.g. 100" />
       </div>
     </div>
 
-    <div class="card info" aria-hidden="false">
-      Settings are automatically saved. Refresh YouTube tab to reflect changes.
+    <div class="card">
+      <label for="maxConcurrentOverlays">Max Concurrent Comments</label>
+      <div class="input-wrapper">
+        <input type="number" id="maxConcurrentOverlays" name="maxConcurrentOverlays" min="1"
+          placeholder="e.g. 3" />
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="overlayDuration">Comment Duration (ms)</label>
+      <div class="input-wrapper">
+        <input type="number" id="overlayDuration" name="overlayDuration" min="100" step="500"
+          placeholder="e.g. 4000" />
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="overlayOpacity">
+        Comment Opacity
+        <span id="overlayOpacityValue">unset</span>
+      </label>
+      <div class="input-wrapper">
+        <input type="range" id="overlayOpacity" name="overlayOpacity" min="0.1" max="1" step="0.1" />
+      </div>
+    </div>
+
+    <div class="card info">
+      Settings are automatically saved. Please refresh YouTube tab to reflect changes.
     </div>
   </div>
 
   <script src="options.js"></script>
-
 </body>
 
 </html>
