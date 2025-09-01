@@ -15,6 +15,31 @@ const OVERLAY_SPACING           = 75
 const TIME_TOLERANCE            = 0.5
 const OVERLAY_FADE_DURATION     = 500
 
+// BUG FIX: timestamps consistently appear
+function waitForSelector(selector, timeout = 3000) {
+    return new Promise((resolve) => {
+        const el = document.querySelector(selector)
+        if (el) return resolve(el)
+
+        const observer = new MutationObserver(() => {
+            const found = document.querySelector(selector)
+            if (found) {
+                observer.disconnect()
+                resolve(found)
+            }
+        })
+        observer.observe(document.documentElement || document.body, { childList: true, subtree: true })
+
+        if (timeout > 0) {
+            setTimeout(() => {
+                observer.disconnect()
+                resolve(document.querySelector(selector))
+            }, timeout)
+        }
+    })
+}
+
+
 // LIVE OVERLAY //
 let timeComments = []
 let activeOverlays = []
@@ -55,9 +80,13 @@ onLocationHrefChange(() => {
     main()
 })
 
-function main() {
+async function main() {
     const videoId = getVideoId()
     if (!videoId) return
+
+    // wait briefly for the progress bar to exist so getOrCreateBar() won't throw
+    await waitForSelector('#movie_player .ytp-progress-bar', 1500)
+    await waitForSelector('#movie_player .ytp-timed-markers-container', 1500)
 
     fetchTimeComments(videoId)
         .then(comments => {
@@ -302,25 +331,42 @@ function removeOverlayContainer() {
 }
 
 function addTimeComments(timeComments) {
-    const bar = getOrCreateBar()
-    const videoDuration = getVideo().duration
-    const groupedComments = new Map()
+    const video = getVideo()
+    if (!video) {
+        waitForSelector('#movie_player video', 2000).then(() => addTimeComments(timeComments))
+        return
+    }
 
-    for (const tc of timeComments) {
-        if (typeof tc.time !== 'number' || tc.time > videoDuration) continue
-
-        const timeKey = tc.time.toString()
-        if (!groupedComments.has(timeKey)) {
-            groupedComments.set(timeKey, [])
+    const tryBuild = () => {
+        const duration = typeof video.duration === 'number' && isFinite(video.duration) ? video.duration : NaN
+        if (!duration || Number.isNaN(duration) || duration <= 0) {
+            const onMeta = () => {
+                video.removeEventListener('loadedmetadata', onMeta)
+                addTimeComments(timeComments)
+            }
+            video.addEventListener('loadedmetadata', onMeta, { once: true })
+            return
         }
-        groupedComments.get(timeKey).push(tc)
+
+        const bar = getOrCreateBar()
+        if (!bar) return
+
+        const groupedComments = new Map()
+        for (const tc of timeComments) {
+            if (typeof tc.time !== 'number' || tc.time > duration) continue
+            const timeKey = tc.time.toString()
+            if (!groupedComments.has(timeKey)) groupedComments.set(timeKey, [])
+            groupedComments.get(timeKey).push(tc)
+        }
+
+        for (const [timeKey, commentsAtTime] of groupedComments) {
+            const time = parseFloat(timeKey)
+            const stamp = createTimestampStamp(time, duration, commentsAtTime)
+            bar.appendChild(stamp)
+        }
     }
 
-    for (const [timeKey, commentsAtTime] of groupedComments) {
-        const time = parseFloat(timeKey)
-        const stamp = createTimestampStamp(time, videoDuration, commentsAtTime)
-        bar.appendChild(stamp)
-    }
+    tryBuild()
 }
 
 function createTimestampStamp(time, videoDuration, commentsAtTime) {
@@ -422,11 +468,31 @@ function createDebouncedCommentOpener() {
 function getOrCreateBar() {
     let bar = document.querySelector('.__youtube-timestamps__bar')
     if (!bar) {
-        const container =   document.querySelector('#movie_player .ytp-timed-markers-container') ||
-                            document.querySelector('#movie_player .ytp-progress-list')
+        const candidateSelectors = [
+            '#movie_player .ytp-timed-markers-container',
+            '#movie_player .ytp-progress-list',
+            '#movie_player .ytp-progress-bar',
+            '#movie_player .ytp-chrome-bottom .ytp-progress-bar'
+        ]
+        let container = null
+        for (const sel of candidateSelectors) {
+            container = document.querySelector(sel)
+            if (container) break
+        }
+
+        if (!container) {
+            const player = document.querySelector('#movie_player')
+            container = player || document.body
+        }
+
         bar = document.createElement('div')
         bar.classList.add('__youtube-timestamps__bar')
-        container.appendChild(bar)
+
+        try {
+            container.appendChild(bar)
+        } catch (err) {
+            document.body.appendChild(bar)
+        }
     }
     return bar
 }
