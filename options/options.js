@@ -31,7 +31,7 @@ function debouncedSave() {
 
         if (overlayDurationRaw !== '') {
             const v = parseInt(overlayDurationRaw, 10);
-            if (isValidInt(v, 1000)) payload.overlayDuration = v;
+            if (isValidInt(v, 1)) payload.overlayDuration = v * 1000;
             else return;
         }
 
@@ -70,7 +70,7 @@ async function restoreOptions() {
         }
 
         if (items.hasOwnProperty('overlayDuration')) {
-            document.getElementById('overlayDuration').value = items.overlayDuration;
+            document.getElementById('overlayDuration').value = items.overlayDuration / 1000;
         } else {
             document.getElementById('overlayDuration').value = '';
         }
@@ -111,8 +111,8 @@ async function saveOptionsManual() {
     }
     if (overlayDurationRaw !== '') {
         const v = parseInt(overlayDurationRaw, 10);
-        if (!isValidInt(v, 1000)) return alert('Comment Duration must be an integer ≥ 1000 ms');
-        payload.overlayDuration = v;
+        if (!isValidInt(v, 1)) return alert('Comment Duration must be an integer ≥ 1000 ms');
+        payload.overlayDuration = v * 1000;
     }
     if (overlayOpacityRaw !== '') {
         const v = parseFloat(overlayOpacityRaw);
