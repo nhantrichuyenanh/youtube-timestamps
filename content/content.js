@@ -11,34 +11,8 @@ const PREVIEW_TEXT_MIN_HEIGHT   = 24
 const WHEEL_SWITCH_THRESHOLD    = 100
 const WHEEL_DEBOUNCE_MS         = 400
 const SCROLL_TOLERANCE          = 1
-const OVERLAY_SPACING           = 75
 const TIME_TOLERANCE            = 0.5
 const OVERLAY_FADE_DURATION     = 500
-
-// BUG FIX: timestamps consistently appear
-function waitForSelector(selector, timeout = 3000) {
-    return new Promise((resolve) => {
-        const el = document.querySelector(selector)
-        if (el) return resolve(el)
-
-        const observer = new MutationObserver(() => {
-            const found = document.querySelector(selector)
-            if (found) {
-                observer.disconnect()
-                resolve(found)
-            }
-        })
-        observer.observe(document.documentElement || document.body, { childList: true, subtree: true })
-
-        if (timeout > 0) {
-            setTimeout(() => {
-                observer.disconnect()
-                resolve(document.querySelector(selector))
-            }, timeout)
-        }
-    })
-}
-
 
 // LIVE OVERLAY //
 let timeComments = []
@@ -72,21 +46,10 @@ browser.storage.sync.get(['maxConcurrentOverlays','overlayDuration','overlayOpac
 })
 
 main()
-onLocationHrefChange(() => {
-    removeBar()
-    removeOverlayContainer()
-    timeComments = []
-    activeOverlays = []
-    main()
-})
 
 async function main() {
     const videoId = getVideoId()
     if (!videoId) return
-
-    // wait briefly for the progress bar to exist so getOrCreateBar() won't throw
-    await waitForSelector('#movie_player .ytp-progress-bar', 1500)
-    await waitForSelector('#movie_player .ytp-timed-markers-container', 1500)
 
     fetchTimeComments(videoId)
         .then(comments => {
@@ -195,10 +158,6 @@ function removeOverlay(overlayData) {
         activeOverlays.splice(idx, 1)
         return
     }
-    const matchIdx = activeOverlays.findIndex(o =>
-        o && (o.commentId === overlayData.commentId || o.timestamp === overlayData.timestamp)
-    )
-    if (matchIdx > -1) activeOverlays.splice(matchIdx, 1)
 }
 
 function formatCommentTextWithTimestampSpans(text) {
@@ -257,16 +216,6 @@ function parseTimestampToSeconds(ts) {
     const [h, m, s] = last3
     if (s > 59 || m > 59) return null
     return h * 3600 + m * 60 + s
-}
-
-function formatSecondsToHMS(sec) {
-    if (typeof sec !== 'number' || Number.isNaN(sec)) return ''
-    sec = Math.floor(sec)
-    const h = Math.floor(sec / 3600)
-    const m = Math.floor((sec % 3600) / 60)
-    const s = sec % 60
-    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-    return `${m}:${String(s).padStart(2,'0')}`
 }
 
 function createOverlayElement(timeComment) {
@@ -470,7 +419,6 @@ function getOrCreateBar() {
     if (!bar) {
         const candidateSelectors = [
             '#movie_player .ytp-timed-markers-container',
-            '#movie_player .ytp-progress-list',
             '#movie_player .ytp-progress-bar',
             '#movie_player .ytp-chrome-bottom .ytp-progress-bar'
         ]
@@ -491,7 +439,6 @@ function getOrCreateBar() {
         try {
             container.appendChild(bar)
         } catch (err) {
-            document.body.appendChild(bar)
         }
     }
     return bar
@@ -514,17 +461,6 @@ function getTooltipBgWidth() {
     if (tooltipBg) {
         const rect = tooltipBg.getBoundingClientRect()
         if (rect?.width > 0) return rect.width
-
-        const computed = window.getComputedStyle(tooltipBg).width
-        if (computed?.endsWith('px')) {
-            const parsed = parseFloat(computed)
-            if (!isNaN(parsed)) return parsed
-        }
-
-        if (tooltipBg.style?.width) {
-            const parsed = parseFloat(tooltipBg.style.width)
-            if (!isNaN(parsed)) return parsed
-        }
     }
 
     const progressBar = document.querySelector('#movie_player .ytp-progress-bar')
@@ -772,13 +708,13 @@ function parseParams(href) {
     return params
 }
 
-function onLocationHrefChange(callback) {
-    let currentHref = document.location.href
-    const observer = new MutationObserver(() => {
-        if (currentHref !== document.location.href) {
-            currentHref = document.location.href
-            callback()
-        }
-    })
-    observer.observe(document.querySelector("body"), {childList: true, subtree: true})
-}
+window.addEventListener('yt-navigate-start', () => {
+    removeBar()
+    removeOverlayContainer()
+    timeComments = []
+    activeOverlays = []
+})
+
+window.addEventListener('yt-navigate-finish', () => {
+    main()
+})
