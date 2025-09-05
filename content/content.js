@@ -76,7 +76,7 @@ function getVideo() {
 
 function fetchTimeComments(videoId) {
     return new Promise((resolve) => {
-        chrome.runtime.sendMessage({type: 'fetchTimeComments', videoId}, resolve)
+        browser.runtime.sendMessage({type: 'fetchTimeComments', videoId}, resolve)
     })
 }
 
@@ -713,6 +713,8 @@ window.addEventListener('yt-navigate-start', () => {
     removeOverlayContainer()
     timeComments = []
     activeOverlays = []
+    tooltipBgResizeObserver?.disconnect?.()
+    tooltipBgResizeObserver = null
 })
 
 window.addEventListener('yt-navigate-finish', () => {
