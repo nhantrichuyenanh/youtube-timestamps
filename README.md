@@ -1,13 +1,13 @@
 TODO:
-- Add options to remove timestamps and/or comment overlays with n amount of timestamps to root out all certain comments that list out chapters, this moment, etc... which could clog up visual space and be unnecessary.
-- Somehow make last shown timestamp' glow when a comment overlay has multiple timestamps.
-- Add Read more button for long timestamps and comment overlays.
-- Add n indicator to prevent the same comment overlay being duplicated.
-- Somehow make a way for long comment overlays wait a bit more before disappearing, or let user manually "swipe" or something to hide them...
-- Add options to change comment overlay position from top left to other directions.
-- Add options to change comment overlay size.
-- When in full screen and scrolling through a timestamp, add-on should still scroll that timestamp instead of YouTube's More videos.
-- Add a button next to video controls to quickly show/hide comment overlays (could conflict with other add-ons that add their own buttons, might find another solution).
-- Make comment overlay change size when video is in normal/full screen/miniplayer.
-- Show other data like display name and options to show/hide them the options menu. Maybe?
-- Keyboard shortcuts to navigate between each timestamps and comment overlays within them?
+- [ ] Add options to remove timestamps and/or comment overlays with n amount of timestamps to root out all certain comments that list out chapters, this moment, etc... which could clog up visual space and be unnecessary.
+- [ ] Somehow make last shown timestamp' glow when a comment overlay has multiple timestamps.
+- [ ] Add Read more button for long timestamps and comment overlays.
+- [ ] Add n indicator to prevent the same comment overlay being duplicated.
+- [ ] Somehow make a way for long comment overlays wait a bit more before disappearing, or let user manually "swipe" or something to hide them...
+- [ ] Add options to change comment overlay position from top left to other directions.
+- [ ] Add options to change comment overlay size.
+- [ ] When in full screen and scrolling through a timestamp, add-on should still scroll that timestamp instead of YouTube's More videos.
+- [ ] Add a button next to video controls to quickly show/hide comment overlays (could conflict with other add-ons that add their own buttons, might find another solution).
+- [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
+- [ ] Show other data like display name and options to show/hide them the options menu. Maybe?
+- [ ] Keyboard shortcuts to navigate between each timestamps and comment overlays within them?
