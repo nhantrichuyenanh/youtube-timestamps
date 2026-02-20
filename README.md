@@ -11,3 +11,5 @@ TODO: ⭐ = easy/important
 - [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
 - [ ] Show other data like display name and options to show/hide them the options menu. Maybe?
 - [ ] Keyboard shortcuts to navigate between each timestamps and comment overlays within them?
+- [ ] Refactor codebase to make development easier.
+- [ ] Check [Developer notes](https://addons.mozilla.org/addon/yt-timestamps/)!
