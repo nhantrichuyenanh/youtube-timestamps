@@ -51,14 +51,16 @@ async function main() {
     const videoId = getVideoId()
     if (!videoId) return
 
-    fetchTimeComments(videoId)
-        .then(comments => {
-            if (videoId === getVideoId()) {
-                timeComments = comments
-                addTimeComments(comments)
-                startVideoTimeMonitoring()
-            }
-        })
+    const [comments] = await Promise.all([
+        fetchTimeComments(videoId),
+        waitForSelector('#movie_player video', 2000).catch(() => null)
+    ])
+
+    if (videoId !== getVideoId()) return
+
+    timeComments = comments
+    addTimeComments(comments)
+    startVideoTimeMonitoring()
 }
 
 function getVideoId() {
@@ -293,6 +295,27 @@ function removeOverlayContainer() {
         overlayContainer = null
     }
     activeOverlays = []
+}
+
+function waitForSelector(selector, timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+        const el = document.querySelector(selector)
+        if (el) return resolve(el)
+
+        const observer = new MutationObserver(() => {
+            const found = document.querySelector(selector)
+            if (found) {
+                observer.disconnect()
+                resolve(found)
+            }
+        })
+        observer.observe(document.documentElement, { childList: true, subtree: true })
+
+        setTimeout(() => {
+            observer.disconnect()
+            reject(new Error(`Timeout waiting for ${selector}`))
+        }, timeoutMs)
+    })
 }
 
 function addTimeComments(timeComments) {
@@ -563,7 +586,7 @@ function setTextMaxHeight(preview, idealHeight) {
     const navIndicator = preview.querySelector('.__youtube-timestamps__preview__nav')
 
     const headerH = headerEl?.offsetHeight || 0
-    const navH = navIndicator?.offsetHeight || 0
+    const navH = navIndicator?.style.display !== 'none' ? (navIndicator?.offsetHeight || 0) + 8 : 0
     const paddingTotal = PREVIEW_PADDING_TOTAL
     const textMax = Math.max(PREVIEW_TEXT_MIN_HEIGHT, idealHeight - headerH - navH - paddingTotal)
 
