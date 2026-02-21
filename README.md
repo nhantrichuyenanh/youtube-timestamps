@@ -18,5 +18,5 @@ TODO: will do the low-hanging fruits first
 - [ ] Fix YouTube's custom emojis not rendering as images (because YouTube treats Unicode and custom emojis as images) but as text.
 - [x] Add support for replies.
 - [ ] Add option to exclude replies.
-- [ ] Refactor codebase to make development easier (it's a hot mess 😵‍💫).
+- [ ] Refactor codebase to make development easier (and migrate some of the consts at the top in `content.js` to `content.css`; it's a hot mess 😵‍💫).
 - [ ] Make some UI adjustments in `content.css` and `options.html`.
