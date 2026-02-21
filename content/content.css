@@ -78,7 +78,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    border: 0px solid rgba(255, 255, 255, 0);
+    border: 0px solid;
 }
 
 .__youtube-timestamps__preview__name {
@@ -87,7 +87,6 @@
     line-height: 1.4;
     margin-left: 10px;
     letter-spacing: 0.2px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .__youtube-timestamps__preview__text {
@@ -103,24 +102,24 @@
 }
 
 .__youtube-timestamps__preview__text-stamp {
-    color: #3ea6ff;
+    color: var(--yt-spec-call-to-action);
     font-weight: 600;
-    background: rgba(62, 166, 255, 0.1);
+    background: rgb(from var(--yt-spec-call-to-action) r g b / 0.1);
     padding: 2px 4px;
     border-radius: 4px;
-    border: 1px solid rgba(62, 166, 255, 0.2);
+    border: 1px solid rgb(from var(--yt-spec-call-to-action) r g b / 0.2);
     transition: all 0.2s ease;
     display: inline-block;
 }
 
 .__youtube-timestamps__preview__nav {
-    background: rgba(62, 166, 255, 0.15);
-    border: 1px solid rgba(62, 166, 255, 0.3);
+    background: rgb(from var(--yt-spec-call-to-action) r g b / 0.15);
+    border: 1px solid rgb(from var(--yt-spec-call-to-action) r g b / 0.3);
     border-radius: 8px;
     padding: 6px 12px;
     margin: 8px 0 0;
     font-size: 12px;
-    color: #3ea6ff;
+    color: var(--yt-spec-call-to-action);
     font-weight: 600;
     text-align: center;
     letter-spacing: 0.2px;
@@ -161,7 +160,6 @@
     transform: translateY(-20px);
     transition: transform 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.32s ease;
     pointer-events: auto;
-    cursor: pointer;
     box-sizing: border-box;
     will-change: transform, opacity, top;
 }
@@ -179,7 +177,7 @@
     border-radius: 50%;
     object-fit: cover;
     background: rgba(255, 255, 255, 0.06);
-    border: 0px solid rgb(0, 0, 0);
+    border: 0px solid;
     flex-shrink: 0;
 }
 
@@ -213,29 +211,29 @@
 }
 
 .__youtube-timestamps__live-overlay__text-stamp {
-    color: #3ea6ff;
+    color: var(--yt-spec-call-to-action);
     font-weight: 600;
-    background: rgba(62, 166, 255, 0.1);
+    background: rgb(from var(--yt-spec-call-to-action) r g b / 0.1);
     padding: 2px 4px;
     border-radius: 4px;
-    border: 1px solid rgba(62, 166, 255, 0.2);
+    border: 1px solid rgb(from var(--yt-spec-call-to-action) r g b / 0.2);
     transition: all 0.2s ease;
     display: inline-block;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .__youtube-timestamps__live-overlay__text-stamp:hover {
-    background: rgba(62, 166, 255, 0.2);
-    border-color: rgba(62, 166, 255, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(62, 166, 255, 0.2);
+    background: rgb(from var(--yt-spec-call-to-action) r g b / 0.2);
+    border-color: rgb(from var(--yt-spec-call-to-action) r g b / 0.4);
+    box-shadow: 0 2px 4px rgba(var(--yt-spec-call-to-action), 0.2);
 }
 
 .__youtube-timestamps__live-overlay__text-stamp:focus {
     outline: none;
-    background: rgba(62, 166, 255, 0.25);
-    border-color: rgba(62, 166, 255, 0.5);
-    box-shadow: 0 0 0 2px rgba(62, 166, 255, 0.3);
+    background: rgb(from var(--yt-spec-call-to-action) r g b / 0.25);
+    border-color: rgb(from var(--yt-spec-call-to-action) r g b / 0.5);
+    box-shadow: 0 0 0 2px rgb(from var(--yt-spec-call-to-action) r g b / 0.3);
 }
 
 .__youtube-timestamps__live-overlay.show {
@@ -246,7 +244,7 @@
 /* LIGHT MODE */
 @media (prefers-color-scheme: light) {
     .__youtube-timestamps__preview {
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--yt-spec-base-background);
         border: 2px solid rgba(0, 0, 0, 0.1);
         box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.15),
@@ -262,7 +260,7 @@
     }
 
     .__youtube-timestamps__live-overlay {
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--yt-spec-base-background);
         border: 1px solid rgba(0, 0, 0, 0.1);
         box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.15),
@@ -282,7 +280,7 @@
 .dark .__youtube-timestamps__preview,
 [dark] .__youtube-timestamps__preview,
 html[dark] .__youtube-timestamps__preview {
-    background: rgba(25, 25, 25, 0.98);
+    background: var(--yt-spec-base-background);
     border: 2px solid rgba(255, 255, 255, 0.1);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.15),
@@ -304,7 +302,7 @@ html[dark] .__youtube-timestamps__preview__text {
 .dark .__youtube-timestamps__live-overlay,
 [dark] .__youtube-timestamps__live-overlay,
 html[dark] .__youtube-timestamps__live-overlay {
-    background: rgba(25, 25, 25, 0.98);
+    background: var(--yt-spec-base-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),

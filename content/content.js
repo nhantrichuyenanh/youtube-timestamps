@@ -160,7 +160,7 @@ function removeOverlay(overlayData) {
     }
 }
 
-function formatCommentTextWithTimestampSpans(text) {
+function formatCommentTextWithTimestampSpans(text, activeTimestamp) {
     const frag = document.createDocumentFragment()
     if (!text) return frag
     const regex = /(\d?\d:)?(\d?\d:)\d\d/g
@@ -173,27 +173,31 @@ function formatCommentTextWithTimestampSpans(text) {
             frag.appendChild(document.createTextNode(text.slice(lastIndex, from)))
         }
         const ts = text.slice(from, to)
-        const span = document.createElement('span')
-        span.className = '__youtube-timestamps__live-overlay__text-stamp'
-        span.textContent = ts
-        span.setAttribute('role', 'button')
-        span.tabIndex = 0
-        span.addEventListener('click', (ev) => {
-            ev.stopPropagation()
-            const secs = parseTimestampToSeconds(ts)
-            const video = getVideo && getVideo()
-            if (video && secs != null) {
-                video.currentTime = Math.max(0, Math.min(video.duration || Infinity, secs))
-                video.play().catch(()=>{})
-            }
-        })
-        span.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter' || ev.key === ' ') {
-                ev.preventDefault()
-                span.click()
-            }
-        })
-        frag.appendChild(span)
+        if (activeTimestamp && ts === activeTimestamp) {
+            const span = document.createElement('span')
+            span.className = '__youtube-timestamps__live-overlay__text-stamp'
+            span.textContent = ts
+            span.setAttribute('role', 'button')
+            span.tabIndex = 0
+            span.addEventListener('click', (ev) => {
+                ev.stopPropagation()
+                const secs = parseTimestampToSeconds(ts)
+                const video = getVideo && getVideo()
+                if (video && secs != null) {
+                    video.currentTime = Math.max(0, Math.min(video.duration || Infinity, secs))
+                    video.play().catch(()=>{})
+                }
+            })
+            span.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault()
+                    span.click()
+                }
+            })
+            frag.appendChild(span)
+        } else {
+            frag.appendChild(document.createTextNode(ts))
+        }
         lastIndex = to
     }
     if (lastIndex < text.length) {
@@ -236,7 +240,7 @@ function createOverlayElement(timeComment) {
 
     const commentText = document.createElement('div')
     commentText.className = '__youtube-timestamps__live-overlay__text'
-    commentText.appendChild(formatCommentTextWithTimestampSpans(timeComment.text || ''))
+    commentText.appendChild(formatCommentTextWithTimestampSpans(timeComment.text || '', timeComment.timestamp))
 
     content.appendChild(authorName)
     content.appendChild(commentText)

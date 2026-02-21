@@ -94,14 +94,6 @@
       margin-left: 8px;
     }
 
-    .info {
-      grid-column: span 2;
-      text-align: center;
-      font-size: 0.9rem;
-      color: var(--muted);
-      padding: 10px 8px;
-    }
-
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1c1b22;
@@ -125,7 +117,7 @@
 <body>
   <div class="container">
     <div class="card">
-      <label for="maxResults">Max Comments</label>
+      <label for="maxResults">Max Comments & Replies</label>
       <div class="input-wrapper">
         <input type="number" id="maxResults" name="maxResults" min="1" placeholder="e.g. 100" />
       </div>
@@ -157,8 +149,11 @@
       </div>
     </div>
 
-    <div class="card info">
-      Settings are automatically saved. Please refresh YouTube tab to reflect changes.
+    <div style="grid-column: span 2; text-align: center; font-size: 0.9rem; color: var(--muted); padding: 10px 8px;">
+      Settings are automatically saved. Please refresh YouTube tab to reflect changes. <br>
+      <a href="https://github.com/nhantrichuyenanh/youtube-timestamps/blob/master/README.md" target="_blank" rel="noopener noreferrer" style="color: inherit">
+        there's a lot to do</a>
+         and this add-on is kinda a mess, so it might take a while for new updates to roll out
     </div>
   </div>
 

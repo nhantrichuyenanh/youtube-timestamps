@@ -10,6 +10,7 @@ export async function fetchComments(videoId) {
     }
     const maxResults = (await browser.storage.sync.get('maxResults')).maxResults
     const comments = []
+    const allThreadItems = []
     let prevToken
     let pageCount = 0
     while (prevToken !== token && pageCount < maxResults && comments.length < maxResults) {
@@ -33,6 +34,7 @@ export async function fetchComments(videoId) {
 
         for (const item of items) {
             if (item.commentThreadRenderer) {
+                allThreadItems.push(item)
                 const commentThreadRenderer = item.commentThreadRenderer
                 if (commentThreadRenderer.comment) {
                     const cr = commentThreadRenderer.comment.commentRenderer
@@ -42,37 +44,19 @@ export async function fetchComments(videoId) {
                     const text = cr.contentText?.runs
                         ? cr.contentText.runs.map(run => run.text).join("")
                         : ""
-                    comments.push({
-                        commentId,
-                        authorName,
-                        authorAvatar,
-                        text
-                    })
+                    comments.push({ commentId, authorName, authorAvatar, text })
                 } else if (commentThreadRenderer.commentViewModel) {
                     const commentViewModel = commentThreadRenderer.commentViewModel.commentViewModel || commentThreadRenderer.commentViewModel
                     const commentKey = commentViewModel?.commentKey
                     const mutation = mutationMap.get(commentKey)
-
-                    if (!mutation) {
-                        continue
-                    }
-
+                    if (!mutation) continue
                     const commentEntityPayload = mutation.payload?.commentEntityPayload
-                    if (!commentEntityPayload) {
-                        continue
-                    }
-
+                    if (!commentEntityPayload) continue
                     const commentId = commentEntityPayload.properties?.commentId
                     const authorName = commentEntityPayload.author?.displayName
                     const authorAvatar = commentEntityPayload.author?.avatarThumbnailUrl
                     const text = commentEntityPayload.properties?.content?.content
-
-                    comments.push({
-                        commentId,
-                        authorName,
-                        authorAvatar,
-                        text
-                    })
+                    comments.push({ commentId, authorName, authorAvatar, text })
                 }
             } else if (item.continuationItemRenderer) {
                 token = item.continuationItemRenderer.continuationEndpoint.continuationCommand.token
@@ -80,6 +64,14 @@ export async function fetchComments(videoId) {
         }
         pageCount++
     }
+
+    for (const item of allThreadItems) {
+        const replyToken = extractReplyToken(item)
+        if (!replyToken) continue
+        const replyComments = await fetchReplies(replyToken)
+        comments.push(...replyComments)
+    }
+
     return comments
 }
 
@@ -124,4 +116,88 @@ async function fetchNext(continuation) {
         body: JSON.stringify(body)
     })
     return await response.json()
+}
+
+function extractReplyToken(item) {
+    const ctr = item.commentThreadRenderer
+    if (!ctr) return null
+
+    const repliesContinuation = ctr.replies
+        ?.commentRepliesRenderer
+        ?.contents?.[0]
+        ?.continuationItemRenderer
+        ?.continuationEndpoint
+        ?.continuationCommand
+        ?.token
+    if (repliesContinuation) return repliesContinuation
+
+    const replyCount = ctr.commentViewModel?.commentViewModel?.replyCount
+        || ctr.commentViewModel?.replyCount
+    if (!replyCount || replyCount === 0) return null
+
+    const repliesToken = ctr.replies
+        ?.commentRepliesRenderer
+        ?.continuations?.[0]
+        ?.nextContinuationData
+        ?.continuation
+    return repliesToken || null
+}
+
+async function fetchReplies(token) {
+    const replies = []
+    let currentToken = token
+    let prevToken
+
+    while (prevToken !== currentToken) {
+        const response = await fetchNext(currentToken)
+        prevToken = currentToken
+
+        const mutations = response.frameworkUpdates?.entityBatchUpdate?.mutations || []
+        const mutationMap = new Map()
+        for (const m of mutations) {
+            if (m && m.entityKey) mutationMap.set(m.entityKey, m)
+        }
+
+        const endpoints = response.onResponseReceivedEndpoints || []
+        const items =
+            endpoints[0]?.appendContinuationItemsAction?.continuationItems ||
+            endpoints[0]?.reloadContinuationItemsCommand?.continuationItems
+
+        if (!items) break
+
+        for (const item of items) {
+            if (item.commentRenderer) {
+                const cr = item.commentRenderer
+                replies.push({
+                    commentId: cr.commentId,
+                    authorName: cr.authorText?.simpleText,
+                    authorAvatar: cr.authorThumbnail?.thumbnails?.[0]?.url,
+                    text: cr.contentText?.runs
+                        ? cr.contentText.runs.map(r => r.text).join("")
+                        : ""
+                })
+            } else if (item.commentViewModel) {
+                const commentViewModel = item.commentViewModel.commentViewModel || item.commentViewModel
+                const commentKey = commentViewModel?.commentKey
+                const mutation = mutationMap.get(commentKey)
+                if (!mutation) continue
+                const payload = mutation.payload?.commentEntityPayload
+                if (!payload) continue
+                replies.push({
+                    commentId: payload.properties?.commentId,
+                    authorName: payload.author?.displayName,
+                    authorAvatar: payload.author?.avatarThumbnailUrl,
+                    text: payload.properties?.content?.content
+                })
+            } else if (item.continuationItemRenderer) {
+                const next = item.continuationItemRenderer
+                    ?.continuationEndpoint
+                    ?.continuationCommand
+                    ?.token
+                if (next) currentToken = next
+            }
+        }
+    }
+
+    return replies
 }
