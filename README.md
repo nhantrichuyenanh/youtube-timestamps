@@ -1,7 +1,7 @@
 TODO: will do the low-hanging fruits first
 - [ ] Add options to remove timestamps and/or comment overlays with n amount of timestamps to root out all certain comments that list out chapters, this moment, etc... which could clog up visual space and be unnecessary.
 - [x] Only current timestamp glows when a comment overlay has multiple timestamps.
-- [ ] Add Read more button for long timestamps and comment overlays.
+- [ ] Make comment overlays that are long scroll to display more text, similar to preview.
 - [ ] Somehow make a way for long comment overlays wait a bit more before disappearing, or let user manually "swipe" or something to hide them...
 - [ ] Add options to change comment overlay position from top left to other directions.
 - [ ] Add options to change comment overlay size.
