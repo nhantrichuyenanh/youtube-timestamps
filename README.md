@@ -1,11 +1,11 @@
 TODO: will do the low-hanging fruits first
 - [ ] Add options to remove timestamps and/or comment overlays with n amount of timestamps to root out all certain comments that list out chapters, this moment, etc... which could clog up visual space and be unnecessary.
 - [x] Only current timestamp glows when a comment overlay has multiple timestamps.
-- [ ] Make comment overlays that are long scroll to display more text, similar to preview.
+- [x] Make comment overlays that are long scroll to display more text, similar to preview.
 - [ ] Somehow make a way for long comment overlays wait a bit more before disappearing, or let user manually "swipe" or something to hide them...
 - [ ] Add options to change comment overlay position from top left to other directions.
 - [ ] Add options to change comment overlay size.
-- [ ] When in full screen and scrolling through a timestamp, add-on should still scroll that timestamp instead of YouTube's More videos.
+- [x] When in full screen and scrolling through a timestamp, add-on should still scroll that timestamp instead of YouTube's More videos.
 - [ ] Add a button next to video controls to quickly show/hide comment overlays (could conflict with other add-ons that add their own buttons, might find another solution).
 - [ ] Comment overlay's width changes in uniform with other comment overlays (I might reconsider this).
 - [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
