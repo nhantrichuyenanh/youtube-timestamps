@@ -248,6 +248,18 @@ function createOverlayElement(timeComment) {
     overlay.appendChild(avatar)
     overlay.appendChild(content)
 
+    commentText.addEventListener('wheel', (e) => {
+        const atTop = commentText.scrollTop <= 0
+        const atBottom = (commentText.scrollTop + commentText.clientHeight) >= (commentText.scrollHeight - 1)
+        if (commentText.scrollHeight > commentText.clientHeight) {
+            if ((e.deltaY < 0 && !atTop) || (e.deltaY > 0 && !atBottom)) {
+                e.stopPropagation()
+                e.preventDefault()
+                commentText.scrollBy({ top: e.deltaY, behavior: 'auto' })
+            }
+        }
+    }, { passive: false })
+
     overlay.addEventListener('auxclick', (e) => {
         if (e.button === 1) {
             e.preventDefault()
@@ -685,6 +697,7 @@ function withWheelThrottle(callback) {
     let afRequested = false
 
     return (e) => {
+        e.stopPropagation()
         if (e.cancelable) e.preventDefault()
         deltaYAcc += e.deltaY
 
