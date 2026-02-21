@@ -7,7 +7,7 @@ TODO: will do the low-hanging fruits first
 - [ ] Add options to change comment overlay size.
 - [x] When in full screen and scrolling through a timestamp, add-on should still scroll that timestamp instead of YouTube's More videos.
 - [ ] Add a button next to video controls to quickly show/hide comment overlays (could conflict with other add-ons that add their own buttons, might find another solution).
-- [ ] Fix 1 of n comment (comments that share a timestamp) UI clipping at the bottom.
+- [x] Fix 1 of n comment (comments that share a timestamp) UI clipping at the bottom (not perfect but will fix it again).
 - [x] Fix add-on not appearing unless user manually refresh YouTube tab once (fuck YouTube SPA).
 - [ ] Comment overlay's width changes in uniform with other comment overlays (I might reconsider this).
 - [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
