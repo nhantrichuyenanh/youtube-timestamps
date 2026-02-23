@@ -19,6 +19,6 @@ TODO: will do the low-hanging fruits first
 - [x] Add support for replies.
 - [ ] Add option to exclude replies.
 - [ ] Remove support for embedded videos (`/embed`).
-- [ ] Give users the ability to choose between Innertube and YouTube Data API. Innertube is "plug-and-play" but can only fetch the first `maxResults ` comments, while YouTube Data API requires users to input their key through Google Cloud Console but fetches all comments of a video.
+- [ ] Give users the ability to choose between Innertube and YouTube Data API. Innertube is "plug-and-play" but can only fetch the first `maxResults` comments and replies, while YouTube Data API requires users to input their key through Google Cloud Console but fetches all comments of a video.
 - [ ] Refactor codebase to make development easier (and migrate some of the consts at the top in `content.js` to `content.css`; it's a hot mess 😵‍💫).
 - [ ] Make some UI adjustments in `content.css` and `options.html`.
