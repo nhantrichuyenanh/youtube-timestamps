@@ -11,7 +11,7 @@ TODO: will do the low-hanging fruits first
 - [x] Fix 1 of n comment (comments that share a timestamp) UI clipping at the bottom (not perfect but will fix it again).
 - [x] Fix add-on not appearing unless user manually refresh YouTube tab once (fuck YouTube SPA).
 - [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
-- [ ] Show other data like display name and options to show/hide them the options menu. Maybe?
+- [ ] Show other data like display name, likes, replies, etc... and options to show/hide them the options menu. Maybe?
 - [ ] Keyboard shortcuts to navigate between each timestamps and comment overlays within them. Maybe?
 - [ ] Fix preview and comment overlays with formatted text (bold, italic, strikethrough) rendering as normal text.
 - [ ] Fix miniplayer breaking add-on.
