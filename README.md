@@ -13,6 +13,7 @@ TODO: will do the low-hanging fruits first
 - [ ] Make comment overlay change size when video is in normal/full screen/miniplayer.
 - [ ] Show other data like display name, likes, replies, etc... and options to show/hide them the options menu. Maybe?
 - [ ] Keyboard shortcuts to navigate between each timestamps and comment overlays within them. Maybe?
+- [ ] Remove "Pull up for precise thinking". Maybe.
 - [ ] Fix preview and comment overlays with formatted text (bold, italic, strikethrough) rendering as normal text.
 - [ ] Fix miniplayer breaking add-on.
 - [ ] Fix YouTube's custom emojis not rendering as images (because YouTube treats Unicode and custom emojis as images) but as text.
