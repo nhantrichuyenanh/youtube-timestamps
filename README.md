@@ -78,3 +78,65 @@ async function main() {
 
 main().catch(console.error)
 ```
+
+example of `response.json`
+```
+"payload": {
+            "commentEntityPayload": {
+              "key": "EhpVZ3pnZTM0MGRCZ0I3NWhXQm01NEFhQUJBZyAoKAE%3D",
+              "properties": {
+                "commentId": "Ugzge340dBgB75hWBm54AaABAg",
+                "content": {
+                  "content": "can confirm: he never gave us up"
+                },
+                "publishedTime": "10 months ago",
+                "replyLevel": 0,
+                "authorButtonA11y": "@YouTube",
+                "toolbarStateKey": "EhpVZ3pnZTM0MGRCZ0I3NWhXQm01NEFhQUJBZyAsKAE%3D",
+                "translateButtonEntityKey": "EhpVZ3pnZTM0MGRCZ0I3NWhXQm01NEFhQUJBZyD_ASgB"
+              },
+              "author": {
+                "channelId": "UCBR8-60-B28hp2BmDPdntcQ",
+                "displayName": "@YouTube",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/3s6evpqAiDU9tQR4sC2siJippbH2RWVPnwHgyl4V0th2iuQz0VDQZbUhQBGmsxLYo-mjG6TqZQ=s88-c-k-c0x00ffffff-no-rj",
+                "isVerified": true,
+                "isCurrentUser": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "clickTrackingParams": "CGEQtnUY____________ASITCMDw75G19JIDFVSBuQUd6mAFSMoBBJ6leJo=",
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@YouTube",
+                        "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+                        "rootVe": 3611,
+                        "apiUrl": "/youtubei/v1/browse"
+                      }
+                    },
+                    "browseEndpoint": {
+                      "browseId": "UCBR8-60-B28hp2BmDPdntcQ",
+                      "canonicalBaseUrl": "/@YouTube"
+                    }
+                  }
+                },
+                "innerBadgeA11y": "@YouTube, verified user",
+                "isArtist": false
+              },
+              "toolbar": {
+                "likeCountLiked": "188K",
+                "likeCountNotliked": "188K",
+                "replyCount": "961",
+                "creatorThumbnailUrl": "https://yt3.ggpht.com/vewxKdtll-rntHAMDPY_Qa6hPac3-J2sCFFUwvGSSR0i7hB4g5rNfF39lCEcjGvsYI0RWx7V1A=s88-c-k-c0x00ffffff-no-rj",
+                "likeButtonA11y": "Like this comment along with 188K other people",
+                "engagementToolbarStyle": {
+                  "value": "ENGAGEMENT_TOOLBAR_STYLE_VALUE_DEFAULT"
+                },
+                "likeCountA11y": "188K likes",
+                "replyCountA11y": "961 replies",
+                "likeInactiveTooltip": "Like",
+                "likeActiveTooltip": "Unlike",
+                "dislikeInactiveTooltip": "Dislike",
+                "dislikeActiveTooltip": "Remove dislike",
+                "heartActiveTooltip": "❤ by @RickAstleyYT"
+              },
+```
