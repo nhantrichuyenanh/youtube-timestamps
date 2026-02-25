@@ -244,8 +244,22 @@ function createOverlayElement(timeComment) {
     commentText.className = '__youtube-timestamps__live-overlay__text'
     commentText.appendChild(formatCommentTextWithTimestampSpans(timeComment.text || '', timeComment.timestamp))
 
+    const scrollShadow = document.createElement('div')
+    scrollShadow.className = '__youtube-timestamps__live-overlay__text-scroll-shadow'
+    scrollShadow.style.opacity = '0'
+
+    const updateShadow = () => {
+        const isScrollable = commentText.scrollHeight > commentText.clientHeight + 2
+        const atBottom = commentText.scrollTop + commentText.clientHeight >= commentText.scrollHeight - 2
+        scrollShadow.style.opacity = (isScrollable && !atBottom) ? '1' : '0'
+    }
+
+    commentText.addEventListener('scroll', updateShadow)
+    requestAnimationFrame(() => requestAnimationFrame(updateShadow))
+
     content.appendChild(authorName)
     content.appendChild(commentText)
+    commentText.appendChild(scrollShadow)
 
     overlay.appendChild(avatar)
     overlay.appendChild(content)

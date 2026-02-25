@@ -207,6 +207,21 @@
     word-wrap: break-word;
     white-space: pre-wrap;
     scroll-behavior: smooth;
+    position: relative;
+}
+
+.__youtube-timestamps__live-overlay__text-scroll-shadow {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    margin-top: -28px;
+    pointer-events: none;
+    flex-shrink: 0;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(to bottom, transparent, var(--yt-spec-base-background));
+    transition: opacity 0.2s ease;
 }
 
 .__youtube-timestamps__live-overlay__text-stamp {
